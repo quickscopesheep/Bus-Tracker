@@ -5,13 +5,17 @@ import api
 
 app = Flask(__name__)
 
-@app.route("/search")
+@app.route("/")
 def search_route():
     return app.send_static_file('search.html')
 
 @app.route("/results")
 def results_route():
     return app.send_static_file('results.html')
+
+@app.route("/timetable")
+def timetable_route():
+    return app.send_static_file('timetable.html')
 
 @app.route("/api")
 def api_route():
