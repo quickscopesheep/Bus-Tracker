@@ -6,6 +6,11 @@
     <title>Results</title>
 </head>
 <body>
-    
+    <h1>Bus Tracker</h1>
+    <ul>
+        {% for v in matches %}
+        <li>{{v}}</li>
+        {% endfor %}
+    </ul>
 </body>
 </html>
