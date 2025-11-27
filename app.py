@@ -19,3 +19,11 @@ def results_route():
 @app.route('/timetable')
 def timetable_route():
     return render_template('timetable.html')
+
+@app.route('/routefind')
+def routefinder_route():
+    return render_template('routefind.html')
+
+@app.route('/map')
+def map_route():
+    return render_template('map.html')
