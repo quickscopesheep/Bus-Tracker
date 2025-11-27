@@ -25,9 +25,9 @@ def build_search_result(search_body):
     results = []
     for k in dummy_data:
         if search_body in k:
-            results += {
+            results.append({
                 'label': k,
-                'href' : f'/timetable?route={k}'
-            }
+                'href': f'/timetable?code={k}'
+            })
 
     return results

@@ -14,8 +14,7 @@ def search_route():
 @app.route('/results')
 def results_route():
     res = timetable_api.build_search_result(request.args.get('q', ''))
-    return render_template('results.html', matches = [
-    ])
+    return render_template('results.html', matches = res)
 
 @app.route('/timetable')
 def timetable_route():
