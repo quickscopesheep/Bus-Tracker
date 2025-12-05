@@ -1,9 +1,12 @@
 {% extends 'base.html' %}
-
+{% block header %}
+<title>Search</title>
 <link rel="stylesheet" href="{{url_for('static', filename='css/search.css')}}">
+{% endblock %}
+
 
 {% block content %}
-<div id="the-search-bar">
+<div id="search-container">
     <form action="/results" method="get">
         <input type="text" placeholder="bus route, bus stop" name="q">
         <input type="submit">
