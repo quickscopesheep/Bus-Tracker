@@ -1,2 +1,4 @@
 flask
-bods-client
+dotenv
+naptan
+requests
