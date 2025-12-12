@@ -1,28 +1,30 @@
 from flask import *
 import json
+import sys
 
 import timetable_api
 
 #use templates for static stuff. use API route for dynamic stuff eg. autocomplete, bus locations
 
-app = Flask(import_name='backend')
+app = Flask(__name__)
 
 @app.route('/search')
 @app.route('/')
 def search_route():
-    return app.send_static_file('search.html')
+    return render_template('search.html')
 
 @app.route('/results')
 def results_route():
-    return app.send_static_file('results.html')
+    res = timetable_api.build_search_result(request.args.get('q', ''))
+    return render_template('results.html', matches = res)
 
 @app.route('/timetable')
 def timetable_route():
-    return app.send_static_file('timetable.html')
+    return render_template('timetable.html')
 
-@app.route('/timetable_api')
+@app.route('/api')
 def api_route():
     search_body = request.args.get('body', '')
-    response_struct = timetable_api.build_search_result(search_body)
+    response_struct = api.build_search_result(search_body)
 
     return json.dumps(response_struct)

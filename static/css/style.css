@@ -1,0 +1,26 @@
+* {
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.nav-list {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.nav-link{
+    float: right;
+}
+
+.nav-title{
+    float: left;
+    font-weight: bold;
+}
+
+.nav-list a {
+    display: block;
+    color: black;
+    padding: 14px 16px;
+    text-decoration: none;
+}

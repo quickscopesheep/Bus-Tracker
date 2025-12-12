@@ -1,11 +1,12 @@
 import os
 
 import naptan
-import requests
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+import timetables
 
 LIMIT = 10_000
 BODS_API_URL = 'https://data.bus-data.dft.gov.uk/api/v1/dataset/?'
@@ -32,4 +33,11 @@ def build_search_result(search_body):
 #testing
 if __name__ == '__main__':
     #codes = _get_atco_codes()
-    pull_timetable(None, [str(450)])
+    req = timetables.api.BODSTimetableRequest(
+        atcos = None,
+        nocs = None,
+        search = "",
+        limit = 10
+    )
+
+    req.send()

@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<ul>
+    {% for v in matches %}
+    <li><a href="{{v.href}}">{{v.label}}</a></li>
+    {% endfor %}
+</ul>
+{% endblock %}
