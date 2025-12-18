@@ -2,4 +2,5 @@ flask
 dotenv
 naptan
 requests
-
+transx2gtfs
+gtfs-kit

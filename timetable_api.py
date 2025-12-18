@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-import timetables
+from timetables import api as tapi
 
 LIMIT = 10_000
 BODS_API_URL = 'https://data.bus-data.dft.gov.uk/api/v1/dataset/?'
@@ -33,11 +33,12 @@ def build_search_result(search_body):
 #testing
 if __name__ == '__main__':
     #codes = _get_atco_codes()
-    req = timetables.api.BODSTimetableRequest(
+    req = tapi.BODSTimetableRequest(
         atcos = None,
         nocs = None,
         search = "",
         limit = 10
     )
 
-    req.send()
+    datasets = req.get()
+    
