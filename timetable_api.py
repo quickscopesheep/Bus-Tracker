@@ -9,7 +9,6 @@ load_dotenv()
 from timetables import api as tapi
 
 LIMIT = 10_000
-BODS_API_URL = 'https://data.bus-data.dft.gov.uk/api/v1/dataset/?'
 
 dummy_data = {
     "254": {

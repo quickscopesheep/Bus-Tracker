@@ -9,12 +9,12 @@ import requests
 
 from dotenv import load_dotenv
 
+load_dotenv()
+
 BODS_API_URL = 'https://data.bus-data.dft.gov.uk/api/v1/dataset/?'
 
 BODS_API_KEY = os.environ.get('BODS_API_KEY')
 DATASET_SAVE_PATH = os.environ.get('DATASET_SAVE_LOCATION')
-
-load_dotenv()
 
 class TimetableDataSet:
     def __init__(self, metadata : dict):
@@ -48,6 +48,8 @@ class TimetableDataSet:
     
     def get_id(self):
         return self.id
+    
+    #for debugging, dont use in prod
 
 class BODSTimetableRequest:
     def __init__(self, atcos : List[str], nocs : List[str], search : str, limit : int):
