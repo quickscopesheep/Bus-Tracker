@@ -25,7 +25,6 @@ class TimetableDataSet:
         self.path = Path(DATASET_SAVE_PATH + str(self.id) + '.zip')
 
         self.download_dataset()
-        self.convert_dataset()
 
     def download_dataset(self):
         if self.path.exists() and not self.path.is_dir():
