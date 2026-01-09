@@ -1,33 +1,43 @@
+import os
+
+import naptan
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+from timetables import api as tapi
+
+LIMIT = 10_000
+
 dummy_data = {
-    '123': {
-        'a': '',
-        'b': '',
-        'opperator': '',
-    },
-    '456': {
-        'a': '',
-        'b': '',
-        'opperator': '',
-    },
-    '459': {
-        'a': '',
-        'b': '',
-        'opperator': '',
-    },
-    '127': {
-        'a': '',
-        'b': '',
-        'opperator': '',
-    },
+    "254": {
+        'a': 'huddersfield',
+        'b': 'leeds',
+        'operator': 'arriva'
+    }
 }
 
-def build_search_result(search_body):
-    results = []
-    for k in dummy_data:
-        if search_body in k:
-            results.append({
-                'label': k,
-                'href': f'/timetable?code={k}'
-            })
+def _get_atco_codes():
+    return naptan.ATCO_CODES.query('Area == "West Yorkshire"')['Code'].to_list()
 
-    return results
+def pull_timetable():
+    pass
+
+def build_search_result(search_body):
+    if search_body in dummy_data:
+        return dummy_data[search_body]
+    return {}
+
+#testing
+if __name__ == '__main__':
+    #codes = _get_atco_codes()
+    req = tapi.BODSTimetableRequest(
+        atcos = None,
+        nocs = None,
+        search = "",
+        limit = 10
+    )
+
+    datasets = req.get()
+    

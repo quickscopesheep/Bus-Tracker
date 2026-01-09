@@ -1,0 +1,10 @@
+[extract stops]
+-scan xml for stop refs
+-use naptan to get location
+-build table of stops, id as key
+
+[routes]
+-extract meta about routes
+-build table of paths
+-compute runtimes
+-insert into table

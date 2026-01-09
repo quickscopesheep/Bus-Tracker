@@ -4,6 +4,8 @@ import sys
 
 import timetable_api
 
+#use templates for static stuff. use API route for dynamic stuff eg. autocomplete, bus locations
+
 app = Flask(__name__)
 
 @app.route('/search')
@@ -20,10 +22,9 @@ def results_route():
 def timetable_route():
     return render_template('timetable.html')
 
-@app.route('/routefind')
-def routefinder_route():
-    return render_template('routefind.html')
+@app.route('/api')
+def api_route():
+    search_body = request.args.get('body', '')
+    response_struct = api.build_search_result(search_body)
 
-@app.route('/map')
-def map_route():
-    return render_template('map.html')
+    return json.dumps(response_struct)
