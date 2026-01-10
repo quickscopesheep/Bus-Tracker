@@ -63,6 +63,10 @@ class BODSTimetableRequest:
         pass
 
     def get(self):
+        if BODS_API_KEY == None:
+            print("NO API KEY FOUND IN .env")
+            return None
+
         print('Requesting API Data')
         self.response = requests.get(BODS_API_URL, {
             'api_key': self.api_key,

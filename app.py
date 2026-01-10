@@ -25,6 +25,6 @@ def timetable_route():
 @app.route('/api')
 def api_route():
     search_body = request.args.get('body', '')
-    response_struct = api.build_search_result(search_body)
+    response_struct = timetable_api.build_search_result(search_body)
 
     return json.dumps(response_struct)

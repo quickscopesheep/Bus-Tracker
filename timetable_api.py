@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from timetables import api as tapi
+from timetables import parse
 
 LIMIT = 10_000
 
@@ -40,4 +41,7 @@ if __name__ == '__main__':
     )
 
     datasets = req.get()
-    
+
+    #cheesing shit
+    parser = parse.DataSetParser(open('datasets/464/BODS_PF0007157_1_20250921_37.xml'))
+    parser.parse()
