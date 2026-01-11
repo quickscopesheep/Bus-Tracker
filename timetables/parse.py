@@ -1,6 +1,6 @@
 import xml.etree.cElementTree as ET
 import isodate
-from datetime import datetime
+from datetime import datetime, timedelta
 
 #global variable, messy but should work
 xml_namespace = {'tx': 'http://www.transxchange.org.uk/'}
@@ -33,12 +33,11 @@ class Stop:
 
 class JourneyPatternTimingLink:
     def __init__(self, e : ET.Element):
+        self.id = e.get('id')
         self.from_stop = e.findtext('tx:From/tx:StopPointRef', namespaces=xml_namespace)
         self.to_stop = e.findtext('tx:To/tx:StopPointRef', namespaces=xml_namespace)
 
-        #TODO: parse duration
-        self.runtime_text = e.findtext('tx:RunTime', namespaces=xml_namespace)
-        self.runtime = isodate.parse_duration(self.runtime_text)
+        self.runtime = isodate.parse_duration(e.findtext('tx:RunTime', namespaces=xml_namespace))
 
         self.route_ref = e.findtext('tx:RouteLinkRef', namespaces=xml_namespace)
 
@@ -87,18 +86,32 @@ class Service:
 class JourneyTimingLink:
     def __init__(self, e : ET.Element):
         self.pattern_timing_link_ref = e.findtext('tx:JourneyPatternTimingLinkRef', namespaces=xml_namespace)
-        self.runtime_text = e.findtext('tx:RunTime', namespaces=xml_namespace)
-        self.runtime = isodate.parse_duration(self.runtime_text)
+        self.runtime = isodate.parse_duration(e.findtext('tx:RunTime', namespaces=xml_namespace))
+
+        to_waittime_text = e.findtext('tx:To/tx:WaitTime', namespaces=xml_namespace)
+
+        if to_waittime_text != None: self.to_waittime = isodate.parse_duration(to_waittime_text)
+        else: self.to_waittime = timedelta()
+
+        from_waittime_text = e.findtext('tx:From/tx:WaitTime', namespaces=xml_namespace)
+        if from_waittime_text != None: self.from_waittime = isodate.parse_duration(from_waittime_text)
+        else: self.from_waittime = timedelta()
 
 #our own data structure
 class TimingPoint:
-    def __init__(self, atco, arrival_time, wait_time):
+    def __init__(self, atco, common_name, arrival_time, departure_time):
         self.atco = atco
+        self.common_name = common_name
         self.arrival_time = arrival_time
-        self.wait_time = wait_time
+        self.departure_time = departure_time
+
+    def __str__(self):
+        return f'[Name : {self.common_name}, Atco: {self.atco}, Arrival Time: {self.arrival_time}, Departure Time: {self.departure_time}]'
 
 class Journey:
-    def __init__(self, services, e : ET.Element):
+    def __init__(self, services : dict[Service], stops : dict[Stop], e : ET.Element):
+        self.stops = stops
+
         self.code = e.findtext('tx:VehicleJourneyCode', namespaces=xml_namespace)
         self.private_code = e.findtext('tx:PrivateCode', namespaces=xml_namespace)
 
@@ -125,17 +138,51 @@ class Journey:
         timing_links = [JourneyTimingLink(timing_link_element) for timing_link_element in e.findall('tx:VehicleJourneyTimingLink', namespaces=xml_namespace)]
         self.timing_links = {timing_link.pattern_timing_link_ref : timing_link for timing_link in timing_links}
 
+    #TODO: refactor so array doesnt have to be duplicated
     def get_timing_links(self):
-        return [
-            (link for link in section.timing_links)
-            for section in self.journey_pattern.pattern_sections
-        ]
+        timing_links = []
+        for section in self.journey_pattern.pattern_sections:
+            for link in section.timing_links:
+                journey_timing_link = self.timing_links.get(link.id)
+                timing_links.append((link, journey_timing_link))
 
+        return timing_links
+    
+    def _add_or_get_point(self, points : dict[TimingPoint], atco):
+        point = points.get(atco)
+        if point: return point
+        else:
+            point = TimingPoint(atco, self.stops[atco].name , None, None)
+            points[atco] = point
+            return point
+    
     def get_timetable(self):
-        time = self.departure_time
+        points = {}
+        time = datetime.combine(datetime.today(), self.departure_time)
 
-        for link in self.get_timing_links():
-            pass
+        for (link, journey_timing_link) in self.get_timing_links():
+            from_stop = link.from_stop
+            to_stop = link.to_stop
+
+            from_point = self._add_or_get_point(points, from_stop)
+            to_point = self._add_or_get_point(points, to_stop)
+
+            runtime = None
+            if journey_timing_link and journey_timing_link.runtime:
+                runtime = journey_timing_link.runtime
+            else:
+                runtime = link.runtime
+
+            from_wait = journey_timing_link.from_waittime
+            to_wait = journey_timing_link.to_waittime
+
+            time += from_wait
+            from_point.departure_time = time
+            time += runtime
+            to_point.arrival_time = time
+
+        return points
+
 
 class DataSetParser:
     def __init__(self, stream):
@@ -149,7 +196,7 @@ class DataSetParser:
         journeys = {}
 
         for journey_element in e:
-            journey = Journey(self.services, journey_element)
+            journey = Journey(self.services, self.stops, journey_element)
             journeys[journey.code] = journey
 
         for journey in iter(journeys.values()):

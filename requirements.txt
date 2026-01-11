@@ -2,4 +2,4 @@ flask
 dotenv
 naptan
 requests
-isodata
+isodate

@@ -43,5 +43,8 @@ if __name__ == '__main__':
     datasets = req.get()
 
     #cheesing shit
-    parser = parse.DataSetParser(open('datasets/464/BODS_PF0007157_1_20250921_37.xml'))
+    parser = parse.DataSetParser(open('datasets/transx_464/BODS_PF0007157_1_20250921_37.xml'))
     parser.parse()
+
+    tt = parser.journeys[0].get_timetable()
+    for tp in iter(tt.values()): print(tp)

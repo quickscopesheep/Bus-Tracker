@@ -14,7 +14,7 @@ load_dotenv()
 BODS_API_URL = 'https://data.bus-data.dft.gov.uk/api/v1/dataset/?'
 
 BODS_API_KEY = os.environ.get('BODS_API_KEY')
-DATASET_SAVE_PATH = os.environ.get('DATASET_SAVE_LOCATION')
+DATASET_SAVE_PATH = os.environ.get('DATASET_PATH')
 
 class TimetableDataSet:
     def __init__(self, metadata : dict):
