@@ -1,38 +1,30 @@
-function render_timetable(table_element, type, timing_points, direction) {
+//TODO: rewrite in python, just use javascript to display
+function render_timetable(table_element, type, timing_points, direction, service_day, timing_status) {
     table_element.innerHTML = ''
-
-    const entities = {}
-    const entity_names = {}
-
-    //sort times
-    //sort by sequence
-    
-    Array.from(timing_points).forEach(point => {
-        if(point.direction != direction)
-            return
-        if(point.entity_id in entities) {
-            entities[point.entity_id].push(point.arrival_time)
-        }else{
-            entities[point.entity_id] = [point.arrival_time]
-            entity_names[point.entity_id] = [point.name]
-        }
-    })
 
     const table_header_element = table_element.appendChild(document.createElement('tr'))
 
-    table_header_element.appendChild(document.createElement('th')).textContent = type
+    table_header_element.appendChild(document.createElement('th')).textContent = type == 'route' ?
+        'stop' : 'route'
     table_header_element.appendChild(document.createElement('th')).textContent = 'Times'
 
-    for(const entity in entities){
+    Array.from(timing_points).forEach(entity => {
         const current_row = table_element.appendChild(document.createElement('tr'))
-        current_row.appendChild(document.createElement('td')).textContent = entity_names[entity]
+        current_row.appendChild(document.createElement('td')).textContent = entity.name
 
-        times_array = Array.from(entities[entity])
+        times_array = Array.from(entity.times)
+    })
 
-        times_array.forEach(time => {
-            current_row.appendChild(document.createElement('td')).textContent = time
-        })
-    }
+    //for(const entity in entities){
+    //    const current_row = table_element.appendChild(document.createElement('tr'))
+    //    current_row.appendChild(document.createElement('td')).textContent = entity_names[entity]
+//
+    //    times_array = Array.from(entities[entity])
+//
+    //    times_array.forEach(time => {
+    //        current_row.appendChild(document.createElement('td')).textContent = time
+    //    })
+    //}
 }
 
 function render_stop_info(info){
@@ -59,21 +51,24 @@ function on_recieve_timetable(type, data) {
     else
         render_route_info(data.info)
 
-    render_timetable(document.getElementById('timetable'), type, data.timing_points, 0)
-}
-
-function fetch_timetable() {
+    direction = document.getElementById('direction').value
     service_day = document.getElementById('service-day').value
     timing_status = document.getElementById('timing-status').value
 
+    render_timetable(document.getElementById('timetable'), type, data.timing_points,
+        direction,
+        service_day,
+        timing_status
+    )
+}
+
+function fetch_timetable() {
     const params = new URLSearchParams(window.location.search)
     type = params.get('type')
     id = params.get('id')
 
     const url = new URL(`/api/${type}`, window.location.origin)
     url.searchParams.set('id', id)
-    url.searchParams.set('service-day', service_day)
-    url.searchParams.set('timing-status', timing_status)
 
     fetch(url).then(response => {
         if(!response.ok)
@@ -85,12 +80,22 @@ function fetch_timetable() {
 }
 
 window.addEventListener('load', () => {
+    const params = new URLSearchParams(window.location.search)
+    type = params.get('type')
+
     Array.from(document.getElementById('timetable-info').children).forEach(e => {
         e.style.display = 'none'
     })
 
     document.getElementById('service-day').addEventListener('change', fetch_timetable)
+
     document.getElementById('timing-status').addEventListener('change', fetch_timetable)
+    document.getElementById('direction').addEventListener('change', fetch_timetable)
+
+    if(type == 'stop') {
+        document.getElementById('timing-status').style.display = 'none'
+        document.getElementById('direction').style.display = 'none'
+    }
 
     fetch_timetable()
 })

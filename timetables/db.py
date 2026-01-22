@@ -15,7 +15,8 @@ class TimetableDatabase:
     def __init__(self, path):
         self.path = path
 
-        self.times_schema = ('entity_id', 'name', 'arrival_time', 'departure_time', 'sequence', 'direction')
+        self.times_schema = ('entity_id', 'name', 'arrival_time', 'departure_time', 'sequence', 'direction',
+                              'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')
 
         self.init_db()
 
@@ -169,37 +170,42 @@ class TimetableDatabase:
         return self._result_to_dict(cur.fetchone(), ('route_name', 'route_desc', 'agency_name', 'agency_url'))
 
 
-    def get_stop_times(self, stop_id, service_day, timing_status):
+    def get_stop_times(self, stop_id):
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
 
-        if service_day not in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
-            return []
-
         cur.execute(f"""
-            SELECT t.route AS entity_id, r.name as name, t.arrival_time AS arrival_time, t.departure_time AS departure_time, t.sequence AS sequence, t.direction AS direction
+            
+            SELECT t.stop AS entity_id, r.name as name, t.arrival_time AS arrival_time, t.departure_time AS departure_time,
+                    t.sequence AS sequence, t.direction AS direction,
+                    s.monday as monday, s.tuesday as tuesday, s.wednesday as wednesday,
+                    s.thursday as thursday, s.friday as friday, s.saturday as saturday,
+                    s.sunday as sunday
+
                 FROM Times t
                 JOIN Services s ON t.service = s.id
-                JOIN Routes r ON t.route = r.id
-                WHERE t.stop = :stop_id AND s.{service_day} = '1' AND t.timepoint = :timing_status
-        """, {'stop_id': stop_id, 'timing_status': timing_status})
+                JOIN Routes st ON t.stop = r.id
+                WHERE t.route = :route_id
+        """, {'stop_id': stop_id})
 
         return [self._result_to_dict(res, self.times_schema) for res in cur.fetchall()]
 
-    def get_route_times(self, route_id, service_day, timing_status):
+    def get_route_times(self, route_id):
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
 
-        if service_day not in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
-            return []
-
         cur.execute(f"""
-            SELECT t.stop AS entity_id, st.name as name, t.arrival_time AS arrival_time, t.departure_time AS departure_time, t.sequence AS sequence, t.direction AS direction
+            SELECT t.stop AS entity_id, st.name as name, t.arrival_time AS arrival_time, t.departure_time AS departure_time,
+                    t.sequence AS sequence, t.direction AS direction,
+                    s.monday as monday, s.tuesday as tuesday, s.wednesday as wednesday,
+                    s.thursday as thursday, s.friday as friday, s.saturday as saturday,
+                    s.sunday as sunday
+
                 FROM Times t
                 JOIN Services s ON t.service = s.id
                 JOIN Stops st ON t.stop = st.id
-                WHERE t.route = :route_id AND s.{service_day} = '1' AND t.timepoint = :timing_status
-        """, {'route_id': route_id, 'timing_status': timing_status})
+                WHERE t.route = :route_id
+        """, {'route_id': route_id})
 
         return [self._result_to_dict(res, self.times_schema) for res in cur.fetchall()]
 
