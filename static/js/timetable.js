@@ -1,5 +1,5 @@
 //TODO: rewrite in python, just use javascript to display
-function render_timetable(table_element, type, timing_points, direction, service_day, timing_status) {
+function render_timetable(table_element, type, entities, direction, service_day, timing_status) {
     table_element.innerHTML = ''
 
     const table_header_element = table_element.appendChild(document.createElement('tr'))
@@ -8,23 +8,19 @@ function render_timetable(table_element, type, timing_points, direction, service
         'stop' : 'route'
     table_header_element.appendChild(document.createElement('th')).textContent = 'Times'
 
-    Array.from(timing_points).forEach(entity => {
-        const current_row = table_element.appendChild(document.createElement('tr'))
-        current_row.appendChild(document.createElement('td')).textContent = entity.name
-
+    Array.from(entities).forEach(entity => {
         times_array = Array.from(entity.times)
-    })
 
-    //for(const entity in entities){
-    //    const current_row = table_element.appendChild(document.createElement('tr'))
-    //    current_row.appendChild(document.createElement('td')).textContent = entity_names[entity]
-//
-    //    times_array = Array.from(entities[entity])
-//
-    //    times_array.forEach(time => {
-    //        current_row.appendChild(document.createElement('td')).textContent = time
-    //    })
-    //}
+        const current_row = table_element.appendChild(document.createElement('tr'))
+        current_header = current_row.appendChild(document.createElement('td'))
+        header_inner = current_header.appendChild(document.createElement('a')).textContent = entity.name
+
+        times_array.forEach(time => {
+            if(time[service_day] != '1') return
+
+            current_row.appendChild(document.createElement('td')).textContent = time.time
+        })
+    })
 }
 
 function render_stop_info(info){
