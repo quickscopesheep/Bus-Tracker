@@ -72,19 +72,15 @@ class GTFSFeed:
         reader = self._get_csv_reader('calendar.txt')
 
         for row in reader:
-            operational_days = ','.join([
-                    row.get('monday', '0'),
-                    row.get('tuesday', '0'),
-                    row.get('wednesday', '0'),
-                    row.get('thursday', '0'),
-                    row.get('friday', '0'),
-                    row.get('saturday', '0'),
-                    row.get('sunday', '0')
-            ])
-
             yield (
                 row.get('service_id', ''),
-                operational_days,
+                row.get('monday', '0'),
+                row.get('tuesday', '0'),
+                row.get('wednesday', '0'),
+                row.get('thursday', '0'),
+                row.get('friday', '0'),
+                row.get('saturday', '0'),
+                row.get('sunday', '0'),
                 row.get('start_date', ''),
                 row.get('end_date', '')
             )
@@ -136,7 +132,8 @@ class GTFSFeed:
                 row.get('arrival_time', '00:00:00'),
                 row.get('departure_time', '00:00:00'),
                 int(row.get('stop_sequence', '')),
-                trip[2] # Direction
+                trip[2], # Direction
+                row.get('timepoint', '0')
             )
     
 if __name__ == '__main__':

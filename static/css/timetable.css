@@ -1,0 +1,17 @@
+#timetable-header {
+
+}
+
+#timetable-settings {
+    padding: 2em;
+}
+
+#timetable-container {
+    overflow: auto;
+    max-width: 100%;
+    max-height: 50vh;
+}
+
+tr:nth-child(even) {
+  background-color: #eeeeee;
+}

@@ -1,9 +1,18 @@
 {% extends 'base.html' %}
 
+{% block header %}
+<link rel="stylesheet" href="{{url_for('static', filename='css/results.css')}}">
+<title>Results</title>
+{% endblock %}
+
 {% block content %}
-<ul>
-    {% for v in matches %}
-    <li><a href="{{v.href}}">{{v.label}}</a></li>
-    {% endfor %}
-</ul>
+
+<div id="search-container">
+    <input id="search-text" type="text">
+    <input id="search-submit-button" type="button" value="Search">
+</div>
+<div id="results-container">
+</div>
+
+<script src="{{url_for('static', filename='js/results.js')}}"></script>
 {% endblock %}
