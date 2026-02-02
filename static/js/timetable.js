@@ -1,4 +1,3 @@
-//TODO: rewrite in python, just use javascript to display
 function render_timetable(table_element, type, entities, direction, service_day, timing_status) {
     table_element.innerHTML = ''
 
@@ -9,16 +8,26 @@ function render_timetable(table_element, type, entities, direction, service_day,
     table_header_element.appendChild(document.createElement('th')).textContent = 'Times'
 
     Array.from(entities).forEach(entity => {
-        times_array = Array.from(entity.times)
+        if(entity.timing_status != timing_status) return
 
+        times_array = Array.from(entity.times)
+        let actual_times = []
+
+        times_array.forEach(time => {
+            if(time[service_day] != '1') return
+            if(time['direction'] != direction) return
+
+            actual_times.push(time.time)
+        })
+
+        if(actual_times.length == 0) return
+        
         const current_row = table_element.appendChild(document.createElement('tr'))
         current_header = current_row.appendChild(document.createElement('td'))
         header_inner = current_header.appendChild(document.createElement('a')).textContent = entity.name
 
-        times_array.forEach(time => {
-            if(time[service_day] != '1') return
-
-            current_row.appendChild(document.createElement('td')).textContent = time.time
+        actual_times.forEach(t => {
+            current_row.appendChild(document.createElement('td')).textContent = t
         })
     })
 }

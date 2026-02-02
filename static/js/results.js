@@ -1,4 +1,4 @@
-function get_search_element_html(row){
+function render_search_element(row){
     if(row.type == 'stop'){
         return `
             <span class='result-field result-name'> ${row.name} </span>
@@ -23,7 +23,7 @@ function render_search(results){
         const element = document.createElement('button')
         element.className = 'result'
 
-        element.innerHTML = get_search_element_html(result)
+        element.innerHTML = render_search_element(result)
         results_container.appendChild(element)
 
         element.addEventListener('click', () => {
@@ -34,6 +34,8 @@ function render_search(results){
             window.location.assign(url)
         })
     });
+
+    
 }
 
 function submit_search(search_body) {

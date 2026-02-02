@@ -3,6 +3,8 @@ import flask
 import json
 import timetables.db as tdb
 
+from datetime import datetime
+
 api_bp = flask.Blueprint('api', __name__, url_prefix = '/api')
 
 @api_bp.route('/search')
@@ -17,6 +19,7 @@ def build_timetable(timing_points):
                 'name': t['name'],
                 'id': t['entity_id'],
                 'sequence': t['sequence'],
+                'timing_status': t['timing_status'],
                 'times': []
             }
         
@@ -32,7 +35,14 @@ def build_timetable(timing_points):
             'sunday': t['sunday'],
         })
 
-    return list(entities.values())
+    for v in iter(entities.values()):
+        v['times'].sort(key=lambda x: datetime.strptime(x['time'], '%H:%M:%S'))
+
+
+    entities_list = list(entities.values())
+    #entities_list.sort(key= lambda x: x['sequence'])
+
+    return entities_list
 
 #TODO use json for arguments rather than url
 @api_bp.route('/route')
@@ -56,3 +66,6 @@ def api_stop_route():
     }
 
     return json.dumps(response)
+
+if __name__ == '__main__':
+    build_timetable(tdb.instance.get_route_times(65117))

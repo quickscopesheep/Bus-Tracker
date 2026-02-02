@@ -5,6 +5,7 @@ import os
 import json
 
 from .gtfs import GTFSFeed
+from .naptan import NaptanImporter
 
 load_dotenv()
 db_loc = os.environ['DB_PATH']
@@ -85,15 +86,18 @@ class TimetableDatabase:
         if len(chunk) > 0:
             cur.executemany(sql, chunk)
 
-    def import_local(self, path):
-        feed = GTFSFeed(path)
+    def import_local(self, gtfs_path, naptan_path):
+        feed = GTFSFeed(gtfs_path)
 
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
 
-        self._parse_and_import(cur, feed.parse_stops,
-            'INSERT OR IGNORE INTO Stops (id, code, name, lat, long) VALUES(?, ?, ?, ?, ?)'
-        )
+        with NaptanImporter(naptan_path, feed.parse_stops()) as naptan:
+            self._parse_and_import(cur, naptan.parse_stops,
+                #'INSERT OR IGNORE INTO Stops (id, code, name, lat, long) VALUES(?, ?, ?, ?, ?)'
+                
+            )
+        
         self._parse_and_import(cur, feed.parse_agencies,
             'INSERT OR IGNORE INTO Agencies (id, name, url) VALUES(?, ?, ?)'
         )
@@ -169,7 +173,6 @@ class TimetableDatabase:
 
         return self._result_to_dict(cur.fetchone(), ('route_name', 'route_desc', 'agency_name', 'agency_url'))
 
-
     def get_stop_times(self, stop_id):
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
@@ -207,7 +210,5 @@ class TimetableDatabase:
         """, {'route_id': route_id})
 
         return [self._result_to_dict(res, self.times_schema) for res in cur.fetchall()]
-
-
 
 instance = TimetableDatabase(db_loc + 'timetables.db')

@@ -25,25 +25,15 @@ class GTFSFeed:
         return True
 
     def _get_csv_reader(self, file_name):
-        file = self.zf.open(file_name)
-        stream = io.TextIOWrapper(file, encoding='utf-8', newline='')
+        f = self.zf.open(file_name)
+        stream = io.TextIOWrapper(f, encoding='utf-8', newline='')
         reader = csv.DictReader(stream)
 
         return reader
 
-    # (id, atco, name, lat, long)
     def parse_stops(self):
         reader = self._get_csv_reader('stops.txt')
-
-        for row in reader:
-            yield (
-                row.get('stop_id',''),
-                #NAPTAN?
-                row.get('stop_code', ''),
-                row.get('stop_name', ''),
-                row.get('stop_lat'),
-                row.get('stop_lon'),
-            )
+        return {row.get('stop_code', '') : row.get('stop_id', '') for row in reader}
 
     #(id, name, url)
     def parse_agencies(self):
