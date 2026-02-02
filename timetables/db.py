@@ -7,30 +7,45 @@ import json
 from .gtfs import GTFSFeed
 from .naptan import NaptanImporter
 
+from pathlib import Path
+
 load_dotenv()
-db_loc = os.environ['DB_PATH']
+db_path = os.environ['DB_PATH']
 
 IMPORT_CHUNK_SIZE = 1000
 
 class TimetableDatabase:
     def __init__(self, path):
         self.path = path
-
         self.times_schema = ('entity_id', 'name', 'arrival_time', 'departure_time', 'sequence', 'direction', 'timing_status',
                               'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')
 
-        self.init_db()
+        self.sql_scripts = {}
 
-    def init_db(self):
+        self._load_scripts()
+        self._init_db()
+
+    def _load_scripts(self):
+        for fp in [p for p in Path('sql/').iterdir() if p.is_file()]:
+            with open(fp) as f:
+                self.sql_scripts[fp.name] = f.read()
+
+    def _init_db(self):
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
         cur.executescript("""
             CREATE TABLE IF NOT EXISTS Stops (
                 id TEXT PRIMARY KEY,
-                code TEXT,
                 name TEXT,
+                indicator TEXT,
+                bearing TEXT,
+                lon TEXT,
                 lat TEXT,
-                long TEXT
+                street TEXT,
+                landmark TEXT,
+                town TEXT,
+                nptg_locality TEXT,
+                locality_name TEXT,
             );
             CREATE TABLE IF NOT EXISTS Agencies (
                 id TEXT PRIMARY KEY,
@@ -43,6 +58,13 @@ class TimetableDatabase:
                 name TEXT,
                 name_long TEXT,
                 desc TEXT
+            );
+            CREATE TABLE IF NOT EXISTS Trips (
+                id TEXT PRIMARY KEY,
+                route TEXT,
+                direction TEXT,
+                service TEXT,
+                headsign TEXT
             );
             CREATE TABLE IF NOT EXISTS Services (
                 id TEXT PRIMARY KEY,
@@ -62,13 +84,11 @@ class TimetableDatabase:
                 exception_type TEXT
             );
             CREATE TABLE IF NOT EXISTS Times (
-                route TEXT,
-                service TEXT,
+                trip TEXT,
                 stop TEXT,
                 arrival_time TEXT,
                 departure_time TEXT,
                 sequence INTEGER,
-                direction INTEGER,
                 timepoint TEXT
             );
         """)
@@ -94,8 +114,8 @@ class TimetableDatabase:
 
         with NaptanImporter(naptan_path, feed.parse_stops()) as naptan:
             self._parse_and_import(cur, naptan.parse_stops,
-                #'INSERT OR IGNORE INTO Stops (id, code, name, lat, long) VALUES(?, ?, ?, ?, ?)'
-                
+                """INSERT OR IGNORE INTO Stops (id, name, indicator, bearing, lon, lat, street, landmark, town, nptg_locality, locality_name)
+                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
             )
         
         self._parse_and_import(cur, feed.parse_agencies,
@@ -103,6 +123,9 @@ class TimetableDatabase:
         )
         self._parse_and_import(cur, feed.parse_routes,
             'INSERT OR IGNORE INTO Routes (id, agency, name, name_long, desc) VALUES(?, ?, ?, ?, ?)'
+        )
+        self._parse_and_import(cur, feed.parse_routes,
+            'INSERT OR IGNORE INTO Trips (id, route, direction, service, headsign) VALUES(?, ?, ?, ?, ?)'
         )
         self._parse_and_import(cur, feed.parse_service,"""
             INSERT OR IGNORE INTO Services (id, monday, tuesday, wednesday, thursday, friday, saturday, sunday, start_date, end_date)
@@ -112,16 +135,12 @@ class TimetableDatabase:
             'INSERT OR IGNORE INTO ServiceDates (id, date, exception_type) VALUES(?, ?, ?)'                       
         )
         self._parse_and_import(cur, feed.parse_times,""" 
-            INSERT OR IGNORE INTO Times (route, service, stop, arrival_time, departure_time,
-                sequence, direction, timepoint) VALUES(?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT OR IGNORE INTO Times (trip, stop, arrival_time, departure_time,
+                sequence, timepoint) VALUES(?, ?, ?, ?, ?, ?)
         """)
         
         conn.commit()
 
-    def download_and_import(self):
-        #TODO
-        pass
-    
     def _result_to_dict(self, result, schema):
         return {
             schema[i]: result[i] for i in range(len(schema))
@@ -211,4 +230,4 @@ class TimetableDatabase:
 
         return [self._result_to_dict(res, self.times_schema) for res in cur.fetchall()]
 
-instance = TimetableDatabase(db_loc + 'timetables.db')
+instance = TimetableDatabase(db_path + 'timetables.db')

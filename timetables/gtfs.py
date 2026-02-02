@@ -86,43 +86,32 @@ class GTFSFeed:
                 row.get('exception_type', '')
             )
 
-    #(id, route, direction, service)
-    def _parse_trips(self):
+    #(id, route, direction, service, headsign)
+    def parse_trips(self):
         reader = self._get_csv_reader('trips.txt')
-
-        self.trips = {}
 
         for row in reader:
             trip = (
                 row.get('trip_id', ''),
                 row.get('route_id', ''),
                 row.get('direction_id', ''),
-                row.get('service_id', '')
+                row.get('service_id', ''),
+                row.get('headsign', '')
             )
-            self.trips[trip[0]] = trip
             yield trip
 
     # handle interpolated times
-    # (route_id, trip_id, stop_id, arrival_time, departure_time, index, direction, service)
+    # (trip_id, stop_id, arrival_time, departure_time, index, timing_status)
     def parse_times(self):
-        trips = {}
-        for trip in self._parse_trips(): trips[trip[0]] = trip
-
         reader = self._get_csv_reader('stop_times.txt')
         
         for row in reader:
-            trip = trips.get(row.get('trip_id'))
-            if trip == None: continue
-            
-            #TODO: handle services
             yield (
-                trip[1], # Route ID
-                trip[3], # Service ID
+                row.get('trip_id', ''),
                 row.get('stop_id', ''),
                 row.get('arrival_time', '00:00:00'),
                 row.get('departure_time', '00:00:00'),
                 int(row.get('stop_sequence', '')),
-                trip[2], # Direction
                 row.get('timepoint', '0')
             )
     
