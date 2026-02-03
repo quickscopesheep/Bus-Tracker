@@ -10,7 +10,7 @@ function render_timetable(table_element, type, entities, direction, service_day,
     table_header_element.appendChild(document.createElement('th')).textContent = 'Times'
 
     Array.from(entities).forEach(entity => {
-        if(entity.timing_status != timing_status) return
+        if(type == 'route' && entity.timing_status != timing_status) return
 
         times_array = Array.from(entity.times)
         let actual_times = []

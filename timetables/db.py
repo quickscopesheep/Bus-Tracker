@@ -170,7 +170,7 @@ class TimetableDatabase:
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
 
-        cur.execute('SELECT name, lat, lon, code from Stops where id=:stop_id', {'stop_id':stop_id})
+        cur.execute('SELECT name, lat, lon, atco from Stops where id=:stop_id', {'stop_id':stop_id})
         return self._result_to_dict(cur.fetchone(), ('stop_name', 'stop_lat', 'stop_lon', 'stop_code'))
     
     # (name, desc, agency_name, agency_url)

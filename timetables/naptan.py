@@ -33,9 +33,9 @@ class NaptanImporter:
             naptan_id = row.get('NaptanCode', '')
             result = ()
 
-            if atco_id in self.ids:
+            if atco_id != '' and atco_id in self.ids:
                 result = self._parse_stop(self.ids[atco_id], row)
-            elif naptan_id in self.ids:
+            elif naptan_id != '' and  naptan_id in self.ids:
                 result = self._parse_stop(self.ids[naptan_id], row)
             else:
                 continue
