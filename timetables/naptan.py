@@ -9,6 +9,7 @@ class NaptanImporter:
     def _parse_stop(self, gtfs_id, row):
         return (
                 gtfs_id,
+                row.get('ATCOCode'),
                 row.get('CommonName', ''),
                 row.get('ShortCommonName', ''),
                 row.get('Indicator', ''),
@@ -19,7 +20,7 @@ class NaptanImporter:
                 row.get('Landmark', ''),
                 row.get('Town', ''),
                 row.get('NptgLocalityCode', ''),
-                [row.get('LocalityName', ''), row.get('ParentLocalityName')].join(', '),
+                ','.join([row.get('LocalityName', ''), row.get('ParentLocalityName')]),
             )
 
     #(Name, ShortName, Indicator, Bearing, Lon, Lat, Street, Landmark, Town, Nptg, LocalityName)
@@ -30,10 +31,13 @@ class NaptanImporter:
         for row in reader:
             atco_id = row.get('ATCOcode', '')
             naptan_id = row.get('NaptanCode', '')
+            result = ()
 
             if atco_id in self.ids:
-                yield self._parse_stop(self.ids[atco_id], row)
+                result = self._parse_stop(self.ids[atco_id], row)
             elif naptan_id in self.ids:
-                yield self._parse_stop(self.ids[naptan_id], row)
+                result = self._parse_stop(self.ids[naptan_id], row)
             else:
                 continue
+
+            yield result

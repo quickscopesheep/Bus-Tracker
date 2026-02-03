@@ -20,15 +20,8 @@ class TimetableDatabase:
         self.times_schema = ('entity_id', 'name', 'arrival_time', 'departure_time', 'sequence', 'direction', 'timing_status',
                               'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')
 
-        self.sql_scripts = {}
-
-        self._load_scripts()
         self._init_db()
 
-    def _load_scripts(self):
-        for fp in [p for p in Path('sql/').iterdir() if p.is_file()]:
-            with open(fp) as f:
-                self.sql_scripts[fp.name] = f.read()
 
     def _init_db(self):
         conn = sqlite3.connect(self.path)
@@ -36,7 +29,9 @@ class TimetableDatabase:
         cur.executescript("""
             CREATE TABLE IF NOT EXISTS Stops (
                 id TEXT PRIMARY KEY,
+                atco TEXT,
                 name TEXT,
+                name_short TEXT,
                 indicator TEXT,
                 bearing TEXT,
                 lon TEXT,
@@ -45,7 +40,7 @@ class TimetableDatabase:
                 landmark TEXT,
                 town TEXT,
                 nptg_locality TEXT,
-                locality_name TEXT,
+                locality_name TEXT
             );
             CREATE TABLE IF NOT EXISTS Agencies (
                 id TEXT PRIMARY KEY,
@@ -112,11 +107,11 @@ class TimetableDatabase:
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
 
-        with NaptanImporter(naptan_path, feed.parse_stops()) as naptan:
-            self._parse_and_import(cur, naptan.parse_stops,
-                """INSERT OR IGNORE INTO Stops (id, name, indicator, bearing, lon, lat, street, landmark, town, nptg_locality, locality_name)
-                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
-            )
+        naptan = NaptanImporter(naptan_path, feed.parse_stops())
+        self._parse_and_import(cur, naptan.parse_stops,
+            """INSERT OR IGNORE INTO Stops (id, atco, name, name_short, indicator, bearing, lat, lon, street, landmark, town, nptg_locality, locality_name)
+            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        )
         
         self._parse_and_import(cur, feed.parse_agencies,
             'INSERT OR IGNORE INTO Agencies (id, name, url) VALUES(?, ?, ?)'
@@ -124,7 +119,7 @@ class TimetableDatabase:
         self._parse_and_import(cur, feed.parse_routes,
             'INSERT OR IGNORE INTO Routes (id, agency, name, name_long, desc) VALUES(?, ?, ?, ?, ?)'
         )
-        self._parse_and_import(cur, feed.parse_routes,
+        self._parse_and_import(cur, feed.parse_trips,
             'INSERT OR IGNORE INTO Trips (id, route, direction, service, headsign) VALUES(?, ?, ?, ?, ?)'
         )
         self._parse_and_import(cur, feed.parse_service,"""
@@ -159,7 +154,7 @@ class TimetableDatabase:
 	            JOIN Agencies a ON r.agency = a.id
 	            WHERE r.name LIKE ?
             UNION
-            SELECT DISTINCT 'stop' as type, s.id as id, s.name as name, '' as agency_name, '' as agency_url, s.code as stop_code
+            SELECT DISTINCT 'stop' as type, s.id as id, s.name as name, '' as agency_name, '' as agency_url, s.atco as stop_code
 	            FROM Stops s
 	            WHERE s.name LIKE ?;
         """, (pattern, pattern))
@@ -175,7 +170,7 @@ class TimetableDatabase:
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
 
-        cur.execute('SELECT name, lat, long, code from Stops where id=:stop_id', {'stop_id':stop_id})
+        cur.execute('SELECT name, lat, lon, code from Stops where id=:stop_id', {'stop_id':stop_id})
         return self._result_to_dict(cur.fetchone(), ('stop_name', 'stop_lat', 'stop_lon', 'stop_code'))
     
     # (name, desc, agency_name, agency_url)
@@ -198,14 +193,15 @@ class TimetableDatabase:
 
         cur.execute(f"""
             SELECT r.id AS entity_id, r.name as name, t.arrival_time AS arrival_time, t.departure_time AS departure_time,
-                    t.sequence AS sequence, t.direction AS direction, t.timepoint AS timepoint,
+                    t.sequence AS sequence, tr.direction AS direction, t.timepoint AS timepoint,
                     s.monday as monday, s.tuesday as tuesday, s.wednesday as wednesday,
                     s.thursday as thursday, s.friday as friday, s.saturday as saturday,
                     s.sunday as sunday
 
                 FROM Times t
-                JOIN Services s ON t.service = s.id
-                JOIN Routes r ON t.route = r.id
+                JOIN Trips tr ON tr.id = t.trip
+                JOIN Services s ON tr.service = s.id
+                JOIN Routes r ON tr.route = r.id
                 WHERE t.stop = :stop_id
         """, {'stop_id': stop_id})
 
@@ -217,15 +213,16 @@ class TimetableDatabase:
 
         cur.execute(f"""
             SELECT t.stop AS entity_id, st.name as name, t.arrival_time AS arrival_time, t.departure_time AS departure_time,
-                    t.sequence AS sequence, t.direction AS direction, t.timepoint AS timepoint,
+                    t.sequence AS sequence, tr.direction AS direction, t.timepoint AS timepoint,
                     s.monday as monday, s.tuesday as tuesday, s.wednesday as wednesday,
                     s.thursday as thursday, s.friday as friday, s.saturday as saturday,
                     s.sunday as sunday
 
                 FROM Times t
-                JOIN Services s ON t.service = s.id
+                JOIN Trips tr ON tr.id = t.trip
+                JOIN Services s ON tr.service = s.id
                 JOIN Stops st ON t.stop = st.id
-                WHERE t.route = :route_id
+                WHERE tr.route = :route_id
         """, {'route_id': route_id})
 
         return [self._result_to_dict(res, self.times_schema) for res in cur.fetchall()]

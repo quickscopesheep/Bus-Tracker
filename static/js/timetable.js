@@ -1,4 +1,6 @@
 function render_timetable(table_element, type, entities, direction, service_day, timing_status) {
+    console.log(entities)
+
     table_element.innerHTML = ''
 
     const table_header_element = table_element.appendChild(document.createElement('tr'))

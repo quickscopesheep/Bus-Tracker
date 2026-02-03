@@ -96,7 +96,7 @@ class GTFSFeed:
                 row.get('route_id', ''),
                 row.get('direction_id', ''),
                 row.get('service_id', ''),
-                row.get('headsign', '')
+                row.get('trip_headsign', '')
             )
             yield trip
 
