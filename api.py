@@ -11,61 +11,22 @@ api_bp = flask.Blueprint('api', __name__, url_prefix = '/api')
 def api_search_route():
     return json.dumps(tdb.instance.get_search_result(flask.request.args.get('q')))
 
-def build_timetable(timing_points):
-    entities = {}
-    for t in timing_points:
-        if t['entity_id'] not in entities:
-            entities[t['entity_id']] = {
-                'name': t['name'],
-                'id': t['entity_id'],
-                'sequence': t['sequence'],
-                'timing_status': t['timing_status'],
-                'times': []
-            }
-        
-        entities[t['entity_id']]['times'].append({
-            'time': t['arrival_time'],
-            'direction': t['direction'],
-            'monday': t['monday'],
-            'tuesday': t['tuesday'],
-            'wednesday': t['wednesday'],
-            'thursday': t['thursday'],
-            'friday': t['friday'],
-            'saturday': t['saturday'],
-            'sunday': t['sunday'],
-        })
+@api_bp.route('/route/info')
+def api_route_info_route():
+    return json.dumps(tdb.instance.get_route_data(flask.request.args.get('id')))
 
-    for v in iter(entities.values()):
-        v['times'].sort(key=lambda x: datetime.strptime(x['time'], '%H:%M:%S'))
+@api_bp.route('/stop/info')
+def api_stop_info_route():
+    return json.dumps(tdb.instance.get_stop_data(flask.request.args.get('id')))
 
+@api_bp.route('/route/timetable')
+def api_route_timetable_route():
+    return json.dumps(
+        tdb.instance.get_route_times(flask.request.args.get('id'))
+    )
 
-    entities_list = list(entities.values())
-    #entities_list.sort(key= lambda x: x['sequence'])
-
-    return entities_list
-
-#TODO use json for arguments rather than url
-@api_bp.route('/route')
-def api_route_route():
-    route_id = flask.request.args.get('id')
-
-    response = {
-        'info': tdb.instance.get_route_data(route_id),
-        'timing_points': build_timetable(tdb.instance.get_route_times(route_id))
-    }
-
-    return json.dumps(response)
-
-@api_bp.route('/stop')
-def api_stop_route():
-    stop_id = flask.request.args.get('id')
-
-    response = {
-        'info': tdb.instance.get_stop_data(stop_id),
-        'timing_points': build_timetable(tdb.instance.get_stop_times(stop_id))
-    }
-
-    return json.dumps(response)
-
-if __name__ == '__main__':
-    build_timetable(tdb.instance.get_route_times(65117))
+@api_bp.route('/stop/timetable')
+def api_stop_timetable_route():
+    return json.dumps(
+        tdb.instance.get_stop_times(flask.request.args.get('id'))
+    )

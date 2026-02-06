@@ -1,5 +1,5 @@
 __pycache__/
 .venv/
-datasets/*
-db/
+temp/*
+db/*
 *.env
