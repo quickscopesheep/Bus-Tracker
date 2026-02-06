@@ -1,5 +1,6 @@
 flask
 dotenv
-naptan
 requests
 isodate
+gtfs-realtime-bindings
+apscheduler

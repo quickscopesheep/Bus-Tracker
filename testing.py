@@ -1,5 +1,4 @@
-import timetables.db as tdb
+from map import db as mdb
 
 if __name__ == '__main__':
-    timing_points = tdb.instance.get_route_times('33298', 'monday', '1')
-    print(timing_points)
+    mdb.instance.fetch_feed()

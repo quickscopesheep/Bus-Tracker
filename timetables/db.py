@@ -10,7 +10,6 @@ from .naptan import NaptanImporter
 from pathlib import Path
 
 load_dotenv()
-db_path = os.environ['DB_PATH']
 
 IMPORT_CHUNK_SIZE = 1000
 
@@ -227,4 +226,4 @@ class TimetableDatabase:
 
         return [self._result_to_dict(res, self.times_schema) for res in cur.fetchall()]
 
-instance = TimetableDatabase(db_path + 'timetables.db')
+instance = TimetableDatabase('db/timetables.db')
