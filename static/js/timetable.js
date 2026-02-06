@@ -1,108 +1,160 @@
-function render_timetable(table_element, type, entities, direction, service_day, timing_status) {
-    console.log(entities)
-
-    table_element.innerHTML = ''
-
-    const table_header_element = table_element.appendChild(document.createElement('tr'))
-
-    table_header_element.appendChild(document.createElement('th')).textContent = type == 'route' ?
-        'stop' : 'route'
-    table_header_element.appendChild(document.createElement('th')).textContent = 'Times'
-
-    Array.from(entities).forEach(entity => {
-        if(type == 'route' && entity.timing_status != timing_status) return
-
-        times_array = Array.from(entity.times)
-        let actual_times = []
-
-        times_array.forEach(time => {
-            if(time[service_day] != '1') return
-            if(time['direction'] != direction) return
-
-            actual_times.push(time.time)
-        })
-
-        if(actual_times.length == 0) return
-        
-        const current_row = table_element.appendChild(document.createElement('tr'))
-        current_header = current_row.appendChild(document.createElement('td'))
-        header_inner = current_header.appendChild(document.createElement('a')).textContent = entity.name
-
-        actual_times.forEach(t => {
-            current_row.appendChild(document.createElement('td')).textContent = t
-        })
-    })
-}
-
-function render_stop_info(info){
-    document.title = info.stop_name
-    document.getElementById('timetable-title').innerText = `Stop: ${info.stop_name}`
-
-    atco_element = document.getElementById('atco')
-    atco_element.textContent = `atco:${info.stop_code}`
-}
-
-function render_route_info(info){
-    document.title = info.route_name
-    document.getElementById('timetable-title').innerText = `Route: ${info.route_name}`
-
-    operator_element = document.getElementById('operator')
-    operator_element.style.display = 'inline'
-    operator_element.textContent = `Operator: ${info.agency_name}`
-    operator_element.href = `${info.agency_url}`
-}
-
-function on_recieve_timetable(type, data) {
-    if(type == 'stop')
-        render_stop_info(data.info)
-    else
-        render_route_info(data.info)
-
-    direction = document.getElementById('direction').value
-    service_day = document.getElementById('service-day').value
-    timing_status = document.getElementById('timing-status').value
-
-    render_timetable(document.getElementById('timetable'), type, data.timing_points,
-        direction,
-        service_day,
-        timing_status
-    )
-}
-
-function fetch_timetable() {
-    const params = new URLSearchParams(window.location.search)
-    type = params.get('type')
-    id = params.get('id')
-
-    const url = new URL(`/api/${type}`, window.location.origin)
-    url.searchParams.set('id', id)
-
-    fetch(url).then(response => {
-        if(!response.ok)
-            throw new Error(`error fetching search: ${response.status}`)
-        return response.json()
-    }).then(data =>{
-        on_recieve_timetable(type, data)
-    })
-}
-
-window.addEventListener('load', () => {
-    const params = new URLSearchParams(window.location.search)
-    type = params.get('type')
-
-    Array.from(document.getElementById('timetable-info').children).forEach(e => {
-        e.style.display = 'none'
-    })
-
-    document.getElementById('service-day').addEventListener('change', fetch_timetable)
-
-    document.getElementById('timing-status').addEventListener('change', fetch_timetable)
-    document.getElementById('direction').addEventListener('change', fetch_timetable)
-
-    if(type == 'stop') {
-        document.getElementById('timing-status').style.display = 'none'
-        document.getElementById('direction').style.display = 'none'
+class Entity {
+    constructor(id, name) {
+        this.id = id
+        this.name = name
+        this.sequence = -1
     }
+
+    update_sequence(new_sequence){
+        this.sequence = Math.max(this.sequence, new_sequence)
+    }
+}
+
+const time_to_seconds = (t) => t.split(':').reduce((acc, x) => acc * 60 + parseInt(x))
+
+class Trip {
+    constructor(){
+        this.times = new Map()
+        this.start_time = 999999999999
+    }
+
+    add_entity(id, time) {
+        this.times.set(id, time)
+        this.start_time = Math.min(this.start_time, time_to_seconds(time))
+    }
+}
+
+//global variable for data
+let app_state = {
+    type: null,
+    id: null,
+    timetable_data: null
+}
+
+function organise_timetable_data(data){
+    entities_map = new Map()
+
+    data.forEach(t => {
+        if(!entities_map.has(t.entity_id))
+            entities_map.set(t.entity_id, new Entity(t.entity_id, t.entity_name))
+        entities_map.get(t.entity_id).update_sequence(t.sequence)
+    });
+
+    const entities = Array.from(entities_map.values())
+    entities.sort((a, b) => a.sequence - b.sequence)
+
+    const trips_map = new Map()
+
+    data.forEach(t => {
+        if(!trips_map.has(t.trip))
+            trips_map.set(t.trip, new Trip())
+        trips_map.get(t.trip).add_entity(t.entity_id, t.arrival_time)
+    })
+
+    var trips = Array.from(trips_map.values())
+
+    trips.sort((a, b) => a.start_time - b.start_time)
+
+    trips.forEach((t) => console.log(t.start_time))
+
+    return {entities, trips}
+}
+
+function render_timetable() {
+    const service_day = $('#service-day').val()
+    const timing_status = $('#timing-status').val()
+    const direction = $('#direction').val()
+
+    let data = app_state.timetable_data
+    data = data.filter((t) => t.service_days[service_day] == '1')
+
+    if(app_state.type == 'route'){
+        data = data.filter((t) => timing_status == 0 || t.timing_status == timing_status)
+        data = data.filter((t) => t.direction == direction)
+    }
+
+    const {entities, trips} = organise_timetable_data(data)
+
+    entities.forEach((e) => {
+        let row = $('<tr></tr>')
+            .addClass('generated-table-row')
+            .appendTo('#timetable')
+        row.append(`<td>${e.name}</td>`)
+
+        trips.forEach((t) => {
+            time_element = $('<td></td>')
+                .appendTo(row)
+                .text(t.times.has(e.id) ? t.times.get(e.id) : '')
+        })
+    })
+
+    $('#table-loading-text').hide()
+    $('#table-header').show()
+    $('#table-entity-header').text(app_state.type == 'route' ? 'Stop' : 'Route')
+}
+
+function render_header(info) {
+    $('#timetable-title').html(`
+        ${info.name}
+        ${info.name2 != '' ? `<span>(${info.name2})</span>` : ''}
+    `)
+
+    if(app_state.type === 'stop'){
+        $('#timetable-info').html(`
+            <span>atco: ${info.stop_code}</span>
+            <span>locality: ${info.stop_locality}</span>
+            <span>town: ${info.stop_town}</span>
+        `)
+    }else{
+        $('#timetable-info').html(`
+            <span>operated by <a href=${info.agency_url}>${info.agency_name}</a></span>
+        `)
+    }
+}
+
+function refresh_timetable(){
+    $('.generated-table-row').remove()
+    render_timetable()
+}
+
+$(document).ready(() => {
+    const params = new URLSearchParams(window.location.search)
+    app_state.type = params.get('type')
+    app_state.id = params.get('id')
+
+    $('#timetable-title').text('Loading...')
+    $('#table-header').hide()
+
+    if(app_state.type === 'stop') {
+        $('#timing-status').hide()
+        $('#direction').hide()
+    }
+
+    $.get(`api/${app_state.type}/info?id=${app_state.id}`, (data, status) => {
+        if(status != 'success'){
+            throw new Error('could not fetch info')
+        }else{
+            render_header(JSON.parse(data))
+        }
+    })
+
+    fetch_timetable = () => $.get(`api/${app_state.type}/timetable?id=${app_state.id}`, (data, status) => {
+        if(status != 'success'){
+            throw new Error('could not fetch info')
+        }else{
+            app_state.timetable_data = JSON.parse(data)
+            render_timetable(app_state.timetable_data)
+        }
+    })
+
+    refresh_timetable = () => {
+        $('.generated-table-row').remove()
+        render_timetable()
+    }
+
+    $('#service-day').change(() => refresh_timetable())
+    $('#timing-status').change(() => refresh_timetable())
+    $('#direction').change(() => refresh_timetable())
 
     fetch_timetable()
 })

@@ -17,9 +17,7 @@ IMPORT_CHUNK_SIZE = 1000
 class TimetableDatabase:
     def __init__(self, path):
         self.path = path
-        self.times_schema = ('entity_id', 'name', 'arrival_time', 'departure_time', 'sequence', 'direction', 'timing_status',
-                              'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')
-
+        self._times_schema = ('trip', 'arrival_time', 'departure_time', 'sequence', 'timing_status', 'direction', 'entity_id', 'entity_name', 'service_days', 'service_start', 'service_end')
         self._init_db()
 
 
@@ -84,7 +82,8 @@ class TimetableDatabase:
                 arrival_time TEXT,
                 departure_time TEXT,
                 sequence INTEGER,
-                timepoint TEXT
+                timepoint TEXT,
+                PRIMARY KEY (trip, stop)
             );
         """)
 
@@ -156,7 +155,8 @@ class TimetableDatabase:
             UNION
             SELECT DISTINCT 'stop' as type, s.id as id, s.name as name, '' as agency_name, '' as agency_url, s.atco as stop_code
 	            FROM Stops s
-	            WHERE s.name LIKE ?;
+	            WHERE s.name LIKE ?
+                LIMIT 50;
         """, (pattern, pattern))
 
         results = [
@@ -170,8 +170,9 @@ class TimetableDatabase:
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
 
-        cur.execute('SELECT name, lat, lon, atco from Stops where id=:stop_id', {'stop_id':stop_id})
-        return self._result_to_dict(cur.fetchone(), ('stop_name', 'stop_lat', 'stop_lon', 'stop_code'))
+        cur.execute('SELECT name, name_short, lat, lon, atco, indicator, bearing, landmark, town, locality_name FROM Stops WHERE id=:stop_id', {'stop_id':stop_id})
+        return self._result_to_dict(cur.fetchone(), ('name', 'name2', 'stop_lat', 'stop_lon', 'stop_code',
+                                                    'stop_indicator', 'stop_bearing', 'stop_landmark', 'stop_town', 'stop_locality'))
     
     # (name, desc, agency_name, agency_url)
     def get_route_data(self, route_id):
@@ -185,46 +186,44 @@ class TimetableDatabase:
                 WHERE r.id = :route_id
         """, {'route_id': route_id})
 
-        return self._result_to_dict(cur.fetchone(), ('route_name', 'route_desc', 'agency_name', 'agency_url'))
+        return self._result_to_dict(cur.fetchone(), ('name', 'name2', 'agency_name', 'agency_url'))
 
     def get_stop_times(self, stop_id):
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
 
         cur.execute(f"""
-            SELECT r.id AS entity_id, r.name as name, t.arrival_time AS arrival_time, t.departure_time AS departure_time,
-                    t.sequence AS sequence, tr.direction AS direction, t.timepoint AS timepoint,
-                    s.monday as monday, s.tuesday as tuesday, s.wednesday as wednesday,
-                    s.thursday as thursday, s.friday as friday, s.saturday as saturday,
-                    s.sunday as sunday
-
-                FROM Times t
-                JOIN Trips tr ON tr.id = t.trip
-                JOIN Services s ON tr.service = s.id
-                JOIN Routes r ON tr.route = r.id
-                WHERE t.stop = :stop_id
+            SELECT trip, arrival_time, departure_time, sequence, timepoint,
+                Trips.direction,
+                Routes.id, Routes.name,
+                Services.monday || Services.tuesday || Services.wednesday || Services.thursday || Services.friday || Services.saturday || Services.sunday,
+                Services.start_date, Services.end_date
+            FROM Times
+            JOIN Trips ON Times.trip = Trips.id
+            JOIN Routes ON Trips.route = Routes.id
+            JOIN Services ON Trips.service = Services.id
+            WHERE Times.stop = :stop_id
         """, {'stop_id': stop_id})
 
-        return [self._result_to_dict(res, self.times_schema) for res in cur.fetchall()]
+        return [self._result_to_dict(res, self._times_schema) for res in cur.fetchall()]
 
     def get_route_times(self, route_id):
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
 
         cur.execute(f"""
-            SELECT t.stop AS entity_id, st.name as name, t.arrival_time AS arrival_time, t.departure_time AS departure_time,
-                    t.sequence AS sequence, tr.direction AS direction, t.timepoint AS timepoint,
-                    s.monday as monday, s.tuesday as tuesday, s.wednesday as wednesday,
-                    s.thursday as thursday, s.friday as friday, s.saturday as saturday,
-                    s.sunday as sunday
-
-                FROM Times t
-                JOIN Trips tr ON tr.id = t.trip
-                JOIN Services s ON tr.service = s.id
-                JOIN Stops st ON t.stop = st.id
-                WHERE tr.route = :route_id
+            SELECT trip, arrival_time, departure_time, sequence, timepoint,
+                Trips.direction,
+                Stops.id, Stops.name_short,
+                Services.monday || Services.tuesday || Services.wednesday || Services.thursday || Services.friday || Services.saturday || Services.sunday,
+                Services.start_date, Services.end_date
+            FROM Times
+            JOIN Trips ON Times.trip = Trips.id
+            JOIN Stops ON Times.stop = Stops.id
+            JOIN Services ON Trips.service = Services.id
+            WHERE Trips.route = :route_id
         """, {'route_id': route_id})
 
-        return [self._result_to_dict(res, self.times_schema) for res in cur.fetchall()]
+        return [self._result_to_dict(res, self._times_schema) for res in cur.fetchall()]
 
 instance = TimetableDatabase(db_path + 'timetables.db')
