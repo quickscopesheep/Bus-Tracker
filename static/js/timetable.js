@@ -132,17 +132,22 @@ $(document).ready(() => {
 
     $.get(`api/${app_state.type}/info?id=${app_state.id}`, (data, status) => {
         if(status != 'success'){
-            throw new Error('could not fetch info')
+            window.location.replace(`/error?code=400&message=${app_state.type} info request failed`)
         }else{
-            render_header(JSON.parse(data))
+            json = JSON.parse(data)
+            if(!json.ok) window.location.replace(`/error?code=400&message=${app_state.type} invald info response`)
+            render_header(json.data)
         }
     })
 
     fetch_timetable = () => $.get(`api/${app_state.type}/timetable?id=${app_state.id}`, (data, status) => {
         if(status != 'success'){
-            throw new Error('could not fetch info')
+            window.location.replace(`/error?code=400&message=${app_state.type} timetable request failed`)
         }else{
-            app_state.timetable_data = JSON.parse(data)
+            json = JSON.parse(data)
+            if(!json.ok) window.location.replace(`/error?code=400&message=${app_state.type} invald timetable response`)
+
+            app_state.timetable_data = json.data
             render_timetable(app_state.timetable_data)
         }
     })

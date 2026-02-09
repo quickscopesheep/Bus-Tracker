@@ -159,10 +159,10 @@ class TimetableDatabase:
         """, (pattern, pattern))
 
         results = [
-            self._result_to_dict(result, ['type', 'id', 'name', 'agency_name', 'agency_url', 'stop_code'])for result in cur.fetchall()
+            self._result_to_dict(result, ['type', 'id', 'name', 'agency_name', 'agency_url', 'stop_code']) for result in cur.fetchall()
         ]
 
-        return results
+        return results, True
 
     # (code, name, lat, long)
     def get_stop_data(self, stop_id):
@@ -170,8 +170,11 @@ class TimetableDatabase:
         cur = conn.cursor()
 
         cur.execute('SELECT name, name_short, lat, lon, atco, indicator, bearing, landmark, town, locality_name FROM Stops WHERE id=:stop_id', {'stop_id':stop_id})
+        if cur.rowcount == 0:
+            return {}, False
+        
         return self._result_to_dict(cur.fetchone(), ('name', 'name2', 'stop_lat', 'stop_lon', 'stop_code',
-                                                    'stop_indicator', 'stop_bearing', 'stop_landmark', 'stop_town', 'stop_locality'))
+                                                    'stop_indicator', 'stop_bearing', 'stop_landmark', 'stop_town', 'stop_locality')), True
     
     # (name, desc, agency_name, agency_url)
     def get_route_data(self, route_id):
@@ -185,7 +188,10 @@ class TimetableDatabase:
                 WHERE r.id = :route_id
         """, {'route_id': route_id})
 
-        return self._result_to_dict(cur.fetchone(), ('name', 'name2', 'agency_name', 'agency_url'))
+        if cur.rowcount == 0:
+            return {}, False
+
+        return self._result_to_dict(cur.fetchone(), ('name', 'name2', 'agency_name', 'agency_url')), True
 
     def get_stop_times(self, stop_id):
         conn = sqlite3.connect(self.path)
@@ -204,7 +210,10 @@ class TimetableDatabase:
             WHERE Times.stop = :stop_id
         """, {'stop_id': stop_id})
 
-        return [self._result_to_dict(res, self._times_schema) for res in cur.fetchall()]
+        if cur.rowcount == 0:
+            return [], False
+
+        return [self._result_to_dict(res, self._times_schema) for res in cur.fetchall()], True
 
     def get_route_times(self, route_id):
         conn = sqlite3.connect(self.path)
@@ -223,6 +232,9 @@ class TimetableDatabase:
             WHERE Trips.route = :route_id
         """, {'route_id': route_id})
 
-        return [self._result_to_dict(res, self._times_schema) for res in cur.fetchall()]
+        if cur.rowcount == 0:
+            return [], False
+
+        return [self._result_to_dict(res, self._times_schema) for res in cur.fetchall()], True
 
 instance = TimetableDatabase('db/timetables.db')

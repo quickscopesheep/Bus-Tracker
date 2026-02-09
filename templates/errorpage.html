@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block header %}
+<title>Error</title>
+<link rel="stylesheet" href="{{url_for('static', filename='css/errorpage.css')}}">
+{% endblock %}
+
+{% block content %}
+<p>There was an error loading the page</p>
+<p id="error"></p>
+<script src="{{url_for('static', filename='js/error.js')}}"></script>
+{% endblock %}
