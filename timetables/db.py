@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 import os
 import json
 
+import dbhelpers
+
 from .gtfs import GTFSFeed
 from .naptan import NaptanImporter
 
@@ -106,38 +108,32 @@ class TimetableDatabase:
         cur = conn.cursor()
 
         naptan = NaptanImporter(naptan_path, feed.parse_stops())
-        self._parse_and_import(cur, naptan.parse_stops,
+        dbhelpers.parse_and_import(cur, naptan.parse_stops,
             """INSERT OR IGNORE INTO Stops (id, atco, name, name_short, indicator, bearing, lat, lon, street, landmark, town, nptg_locality, locality_name)
             VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
         )
-        
-        self._parse_and_import(cur, feed.parse_agencies,
+        dbhelpers.parse_and_import(cur, feed.parse_agencies,
             'INSERT OR IGNORE INTO Agencies (id, name, url) VALUES(?, ?, ?)'
         )
-        self._parse_and_import(cur, feed.parse_routes,
+        dbhelpers.parse_and_import(cur, feed.parse_routes,
             'INSERT OR IGNORE INTO Routes (id, agency, name, name_long, desc) VALUES(?, ?, ?, ?, ?)'
         )
-        self._parse_and_import(cur, feed.parse_trips,
+        dbhelpers.parse_and_import(cur, feed.parse_trips,
             'INSERT OR IGNORE INTO Trips (id, route, direction, service, headsign) VALUES(?, ?, ?, ?, ?)'
         )
-        self._parse_and_import(cur, feed.parse_service,"""
+        dbhelpers.parse_and_import(cur, feed.parse_service,"""
             INSERT OR IGNORE INTO Services (id, monday, tuesday, wednesday, thursday, friday, saturday, sunday, start_date, end_date)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """)
-        self._parse_and_import(cur, feed.parse_service_dates,
+        dbhelpers.parse_and_import(cur, feed.parse_service_dates,
             'INSERT OR IGNORE INTO ServiceDates (id, date, exception_type) VALUES(?, ?, ?)'                       
         )
-        self._parse_and_import(cur, feed.parse_times,""" 
+        dbhelpers.parse_and_import(cur, feed.parse_times,""" 
             INSERT OR IGNORE INTO Times (trip, stop, arrival_time, departure_time,
                 sequence, timepoint) VALUES(?, ?, ?, ?, ?, ?)
         """)
         
         conn.commit()
-
-    def _result_to_dict(self, result, schema):
-        return {
-            schema[i]: result[i] for i in range(len(schema))
-        }
 
     def get_search_result(self, search_body):
         #def should escape body for special chars to avoid SQL injection
@@ -159,7 +155,7 @@ class TimetableDatabase:
         """, (pattern, pattern))
 
         results = [
-            self._result_to_dict(result, ['type', 'id', 'name', 'agency_name', 'agency_url', 'stop_code'])for result in cur.fetchall()
+            dbhelpers.result_to_dict(result, ['type', 'id', 'name', 'agency_name', 'agency_url', 'stop_code'])for result in cur.fetchall()
         ]
 
         return results
@@ -170,7 +166,7 @@ class TimetableDatabase:
         cur = conn.cursor()
 
         cur.execute('SELECT name, name_short, lat, lon, atco, indicator, bearing, landmark, town, locality_name FROM Stops WHERE id=:stop_id', {'stop_id':stop_id})
-        return self._result_to_dict(cur.fetchone(), ('name', 'name2', 'stop_lat', 'stop_lon', 'stop_code',
+        return dbhelpers.result_to_dict(cur.fetchone(), ('name', 'name2', 'stop_lat', 'stop_lon', 'stop_code',
                                                     'stop_indicator', 'stop_bearing', 'stop_landmark', 'stop_town', 'stop_locality'))
     
     # (name, desc, agency_name, agency_url)
@@ -185,7 +181,7 @@ class TimetableDatabase:
                 WHERE r.id = :route_id
         """, {'route_id': route_id})
 
-        return self._result_to_dict(cur.fetchone(), ('name', 'name2', 'agency_name', 'agency_url'))
+        return dbhelpers.result_to_dict(cur.fetchone(), ('name', 'name2', 'agency_name', 'agency_url'))
 
     def get_stop_times(self, stop_id):
         conn = sqlite3.connect(self.path)
@@ -204,7 +200,7 @@ class TimetableDatabase:
             WHERE Times.stop = :stop_id
         """, {'stop_id': stop_id})
 
-        return [self._result_to_dict(res, self._times_schema) for res in cur.fetchall()]
+        return [dbhelpers.result_to_dict(res, self._times_schema) for res in cur.fetchall()]
 
     def get_route_times(self, route_id):
         conn = sqlite3.connect(self.path)
@@ -223,6 +219,6 @@ class TimetableDatabase:
             WHERE Trips.route = :route_id
         """, {'route_id': route_id})
 
-        return [self._result_to_dict(res, self._times_schema) for res in cur.fetchall()]
+        return [dbhelpers.result_to_dict(res, self._times_schema) for res in cur.fetchall()]
 
 instance = TimetableDatabase('db/timetables.db')

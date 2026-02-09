@@ -1,7 +1,9 @@
 import flask
 
 import json
+
 import timetables.db as tdb
+import busmap.db as mdb
 
 from datetime import datetime
 
@@ -29,4 +31,10 @@ def api_route_timetable_route():
 def api_stop_timetable_route():
     return json.dumps(
         tdb.instance.get_stop_times(flask.request.args.get('id'))
+    )
+
+@api_bp.route('/map/livedata')
+def api_map_live_route():
+    return json.dumps(
+        mdb.instance.get_vehicle_positions(flask.request.args.get('id'))
     )
