@@ -158,7 +158,7 @@ class TimetableDatabase:
             dbhelpers.result_to_dict(result, ['type', 'id', 'name', 'agency_name', 'agency_url', 'stop_code'])for result in cur.fetchall()
         ]
 
-        return results
+        return results, True
 
     # (code, name, lat, long)
     def get_stop_data(self, stop_id):

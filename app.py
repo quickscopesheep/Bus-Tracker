@@ -27,3 +27,7 @@ def timetable_template():
 @app.route('/map')
 def map_template():
     return flask.render_template('map.html')
+
+@app.route('/error')
+def error_template():
+    return flask.render_template('errorpage.html')

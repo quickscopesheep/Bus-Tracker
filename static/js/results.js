@@ -45,11 +45,11 @@ function submit_search(search_body) {
 
     fetch(url).then(response => {
         if(!response.ok){
-            throw new Error(`error fetching search: ${response.status}`);
+            window.location.replace(`/error?code=${response.status}&msg=could not get search results`);
         }
         return response.json()
     }).then(results =>{
-        render_search(results)
+        render_search(results.data)
     })
 }
 
