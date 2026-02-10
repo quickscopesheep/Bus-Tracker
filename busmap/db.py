@@ -6,7 +6,10 @@ from google.transit import gtfs_realtime_pb2
 from apscheduler.schedulers.background import BackgroundScheduler
 
 import os
+import time
 import dotenv
+
+import dbhelpers
 
 GTFS_REALTIME_URL = 'https://data.bus-data.dft.gov.uk/api/v1/gtfsrtdatafeed/'
 
@@ -22,11 +25,12 @@ class MapDB:
         self.currentFeed = None
 
         self._init_db()
+        self.fetch_feed()
 
+    def init_scheduler(self):
         self.scheduler = BackgroundScheduler()
         self.scheduler.add_job(self.fetch_feed, "interval", seconds=UPDATE_FREQUENCY)
         self.scheduler.start()
-        pass
 
     def _init_db(self):
         conn = sqlite3.connect(self.path)
@@ -49,20 +53,7 @@ class MapDB:
 
         pass
 
-    def _parse_and_import(self, cur, parse_func, sql):
-        chunk = []
-
-        for stop in parse_func():
-            chunk.append(stop)
-
-            if len(chunk) == IMPORT_CHUNK_SIZE:
-                cur.executemany(sql, chunk)
-                chunk.clear()
-            
-        if len(chunk) > 0:
-            cur.executemany(sql, chunk)
-
-    #(id, route, trip, lon, lat, bearing, licencePlate)
+    #(id, route, trip, lon, lat, bearing, licencePlate, timestamp)
     def _handle_vehicle_message(self):
         for entity in self.currentFeed.entity:
             if entity.HasField('vehicle'):
@@ -74,10 +65,12 @@ class MapDB:
                     str(vehicle.position.longitude),
                     str(vehicle.position.latitude),
                     str(vehicle.position.bearing),
-                    vehicle.vehicle.license_plate
+                    vehicle.vehicle.license_plate,
+                    vehicle.timestamp
                 )
 
     def fetch_feed(self):
+        print("fetching feed")
         response = requests.get(f'{GTFS_REALTIME_URL}?api_key={API_KEY}&')
 
         if not response.ok:
@@ -90,15 +83,25 @@ class MapDB:
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
 
-        self._parse_and_import(cur, self._handle_vehicle_message, """
-            INSERT OR REPLACE INTO Vehicles (id, route, trip, lon, lat, bearing, licencePlate)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+        dbhelpers.parse_and_import(cur, self._handle_vehicle_message, """
+            INSERT OR REPLACE INTO Vehicles (id, route, trip, lon, lat, bearing, licencePlate, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """)
 
-        #cur.execute("DELETE FROM vehicles WHERE timestamp < unixepoch() - 300;")
+        cur.execute("DELETE FROM vehicles WHERE timestamp < ?;", (int(time.time())-300,))
 
         conn.commit()
         pass
 
+    def get_vehicle_positions(self, route_id):
+        conn = sqlite3.connect(self.path)
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT id, trip, timestamp, lon, lat, bearing
+                FROM Vehicles
+                WHERE route = :route_id;
+        """, {'route_id':route_id})
+        return [dbhelpers.result_to_dict(row, ('vehicle_id', 'trip_id', 'timestamp', 'lon', 'lat', 'bearing')) for row in cur.fetchall()]
 
 instance = MapDB('db/map.db')

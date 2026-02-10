@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 import os
 import json
 
+import dbhelpers
+
 from .gtfs import GTFSFeed
 from .naptan import NaptanImporter
 
@@ -105,12 +107,11 @@ class TimetableDatabase:
         cur = conn.cursor()
 
         naptan = NaptanImporter(naptan_path, feed.parse_stops())
-        self._parse_and_import(cur, naptan.parse_stops,
+        dbhelpers.parse_and_import(cur, naptan.parse_stops,
             """INSERT OR IGNORE INTO Stops (id, atco, name, name_short, indicator, bearing, lat, lon, street, landmark, town, nptg_locality, locality_name)
             VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
         )
-        
-        self._parse_and_import(cur, feed.parse_agencies,
+        dbhelpers.parse_and_import(cur, feed.parse_agencies,
             'INSERT OR IGNORE INTO Agencies (id, name, url) VALUES(?, ?, ?)'
         )
         self._parse_and_import(cur, feed.parse_trips,
@@ -123,20 +124,15 @@ class TimetableDatabase:
             INSERT OR IGNORE INTO Services (id, monday, tuesday, wednesday, thursday, friday, saturday, sunday, start_date, end_date)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """)
-        self._parse_and_import(cur, feed.parse_service_dates,
+        dbhelpers.parse_and_import(cur, feed.parse_service_dates,
             'INSERT OR IGNORE INTO ServiceDates (id, date, exception_type) VALUES(?, ?, ?)'                       
         )
-        self._parse_and_import(cur, feed.parse_times,""" 
+        dbhelpers.parse_and_import(cur, feed.parse_times,""" 
             INSERT OR IGNORE INTO Times (trip, stop, arrival_time, departure_time,
                 sequence, timepoint) VALUES(?, ?, ?, ?, ?, ?)
         """)
         
         conn.commit()
-
-    def _result_to_dict(self, result, schema):
-        return {
-            schema[i]: result[i] for i in range(len(schema))
-        }
 
     def get_search_result(self, search_body):
         #def should escape body for special chars to avoid SQL injection

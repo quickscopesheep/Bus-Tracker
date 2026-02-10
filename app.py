@@ -2,12 +2,14 @@ import flask
 
 from api import api_bp
 
-from map import db as mdb
+from busmap import db as mdb
 
 #use templates for static stuff. use API route for dynamic stuff eg. autocomplete, bus locations
 
 app = flask.Flask(__name__)
 app.register_blueprint(api_bp)
+
+mdb.instance.init_scheduler()
 
 @app.route('/search')
 @app.route('/')
