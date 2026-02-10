@@ -4,6 +4,13 @@ import zipfile
 import csv
 import io
 
+
+class TripHeadsign:
+    def __init__(self, name, direction):
+        self.name = name
+        self.direction = direction
+        self.frequency = 1
+
 class GTFSFeed:
     def __init__(self, path : Path):
         self.path = path
@@ -11,6 +18,8 @@ class GTFSFeed:
         self.zf = zipfile.ZipFile(self.path)
 
         self._validate_zip(self.zf.namelist())
+
+        self._route_headsigns = None
 
     def _validate_zip(self, names):
         if 'agency.txt' not in names: return False
@@ -46,16 +55,69 @@ class GTFSFeed:
                 row.get('agency_url', '')
             )
 
+    def _add_headsign(self, route_id, headsign, direction):
+        if route_id not in self._route_headsigns:
+            self._route_headsigns[route_id] = {}
+        
+        if(headsign not in self._route_headsigns[route_id]):
+            self._route_headsigns[route_id][headsign] = TripHeadsign(headsign, direction)
+        
+        self._route_headsigns[route_id][headsign].frequency += 1
+
+    #(id, route, direction, service, headsign)
+    def parse_trips(self):
+        reader = self._get_csv_reader('trips.txt')
+
+        self._route_headsigns = {}
+
+        for row in reader:
+            self._add_headsign(row.get('route_id'), row.get('trip_headsign'), row.get('direction_id'))
+
+            trip = (
+                row.get('trip_id', ''),
+                row.get('route_id', ''),
+                row.get('direction_id', ''),
+                row.get('service_id', ''),
+                row.get('trip_headsign', '')
+            )
+            yield trip
+
+
+    def _process_headsigns(self):
+        computed_headsigns = {}
+
+        for route_id, route_headsigns in self._route_headsigns.items():
+            outbound_headsigns = filter(lambda x : x.direction == '0', list(route_headsigns.values()))
+            outbound_headsigns = sorted(outbound_headsigns, key=lambda x : x.frequency, reverse=True)
+            
+            inbound_headsigns = filter(lambda x : x.direction == '1', list(route_headsigns.values()))
+            inbound_headsigns = sorted(inbound_headsigns, key=lambda x : x.frequency, reverse=True)
+
+            if len(inbound_headsigns) == 0 or len(outbound_headsigns) == 0:
+                continue
+
+            computed_headsigns[route_id] = (inbound_headsigns[0], outbound_headsigns[0])
+        
+        #remove reference as no longer need the large amount of data stored
+        self._route_headsigns = None
+
     #(id, agency, name, longer name, desc)
     def parse_routes(self):
         reader = self._get_csv_reader('routes.txt')
+
+        if self._route_headsigns == None:
+            raise Exception("Must parse trips before routes")
+
+        headsigns = self._process_headsigns()
+
         for row in reader:
             yield (
                 row.get('route_id', ''),
                 row.get('agency_id', ''),
                 row.get('route_short_name', ''),
                 row.get('route_long_name', ''),
-                row.get('route_desc', '')
+                row.get('route_desc', ''),
+                headsigns.get(row.get('route_id'), '')
             )
 
     def parse_service(self):
@@ -85,20 +147,6 @@ class GTFSFeed:
                 # 1=service added, 2=service removed
                 row.get('exception_type', '')
             )
-
-    #(id, route, direction, service, headsign)
-    def parse_trips(self):
-        reader = self._get_csv_reader('trips.txt')
-
-        for row in reader:
-            trip = (
-                row.get('trip_id', ''),
-                row.get('route_id', ''),
-                row.get('direction_id', ''),
-                row.get('service_id', ''),
-                row.get('trip_headsign', '')
-            )
-            yield trip
 
     # handle interpolated times
     # (trip_id, stop_id, arrival_time, departure_time, index, timing_status)

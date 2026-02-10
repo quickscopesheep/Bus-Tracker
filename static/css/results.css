@@ -23,6 +23,7 @@
 #results-container{
     width: 100%;
     list-style: none;
+    overflow: auto;
 }
 
 .result{

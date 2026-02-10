@@ -27,7 +27,12 @@ def api_route_info_route():
 
 @api_bp.route('/stop/info')
 def api_stop_info_route():
-    return json.dumps(tdb.instance.get_stop_data(flask.request.args.get('id')))
+    result, ok = tdb.instance.get_stop_data(flask.request.args.get('id'))
+    
+    return json.dumps({
+        'ok': ok,
+        'data': result
+    })
 
 @api_bp.route('/route/timetable')
 def api_route_timetable_route():

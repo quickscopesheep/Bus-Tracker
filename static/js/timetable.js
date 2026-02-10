@@ -55,8 +55,6 @@ function organise_timetable_data(data){
 
     trips.sort((a, b) => a.start_time - b.start_time)
 
-    trips.forEach((t) => console.log(t.start_time))
-
     return {entities, trips}
 }
 
@@ -132,20 +130,21 @@ $(document).ready(() => {
 
     $.get(`api/${app_state.type}/info?id=${app_state.id}`, (data, status) => {
         if(status != 'success'){
-            window.location.replace(`/error?code=400&message=${app_state.type} info request failed`)
+            window.location.replace(`/error?code=400&msg=${app_state.type} info request failed`)
         }else{
             json = JSON.parse(data)
-            if(!json.ok) window.location.replace(`/error?code=400&message=${app_state.type} invald info response`)
-            render_header(json.data)
+            if(!json.ok) window.location.replace(`/error?code=400&msg=${app_state.type} invald info response`)
+            
+                render_header(json.data)
         }
     })
 
     fetch_timetable = () => $.get(`api/${app_state.type}/timetable?id=${app_state.id}`, (data, status) => {
         if(status != 'success'){
-            window.location.replace(`/error?code=400&message=${app_state.type} timetable request failed`)
+            window.location.replace(`/error?code=400&msg=${app_state.type} timetable request failed`)
         }else{
             json = JSON.parse(data)
-            if(!json.ok) window.location.replace(`/error?code=400&message=${app_state.type} invald timetable response`)
+            if(!json.ok) window.location.replace(`/error?code=400&msg=${app_state.type} invald timetable response`)
 
             app_state.timetable_data = json.data
             render_timetable(app_state.timetable_data)

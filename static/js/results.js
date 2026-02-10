@@ -1,71 +1,68 @@
-function render_search_element(row){
-    if(row.type == 'stop'){
+function get_result_html(row){
+    if(row.type == 'stop')
         return `
             <span class='result-field result-name'> ${row.name} </span>
             <span class='result-field result-info'> atco: ${row.stop_code} </span>
             <span class='result-field result-type'> Stop </span>
         `
-    }else {
-       return `
+    else
+        return `
             <span class='result-field result-name'> ${row.name} </span>
             <span class='result-field result-info'> operated by: ${row.agency_name} </span>
             <span class='result-field result-type'> Route </span>
         `
-    }
 }
 
-function render_search(results){
-    results_container = document.getElementById('results-container')
+function render_results(data) {
+    $('.result').remove()
 
-    results_container.innerHTML = ''
+    if(data.length == 0){
+        $('#no-results-warning').show()
+        return;
+    }else
+        $('#no-results-warning').hide()
 
-    results.forEach(result => {
-        const element = document.createElement('button')
-        element.className = 'result'
-
-        element.innerHTML = render_search_element(result)
-        results_container.appendChild(element)
-
-        element.addEventListener('click', () => {
+    data.forEach((result) => {
+        el = $('<button>')
+            .addClass('result')
+            .appendTo('#results-container')
+        el.html(get_result_html(result))
+        el.click(() => {
             const url = new URL('/timetable', window.location.origin)
             url.searchParams.set('type', result.type)
             url.searchParams.set('id', result.id)
 
             window.location.assign(url)
         })
-    });
-
-    
-}
-
-function submit_search(search_body) {
-    //should prob escape search body
-    const url = new URL('/api/search', window.location.origin)
-    url.searchParams.set('q', search_body)
-
-    fetch(url).then(response => {
-        if(!response.ok){
-            window.location.replace(`/error?code=${response.status}&msg=could not get search results`);
-        }
-        return response.json()
-    }).then(results =>{
-        render_search(results.data)
     })
 }
 
-window.addEventListener('load', () => {
-    //set search input to be url search value
+function submit_search(q) {
+    $.get(`/api/search?q=${q}`, (data, status) => {
+        if(status != 'success'){
+            //window.location.replace(`/error?code=400&msg=search request failed`)
+        }else {
+            console.log(data)
+
+            json = JSON.parse(data)
+            if(!json.ok){
+                //window.location.replace(`/error?code=400&msg=invalid search response`)
+            }
+
+            render_results(json.data)
+        }
+    })
+}
+
+$(document).ready(() => {
     const params = new URLSearchParams(window.location.search)
-
     q = params.get('q')
-    document.getElementById('search-text').value = q
+    
+    $('#no-results-warning').hide()
 
-    document.getElementById('search-submit-button').addEventListener('click', () => 
-        submit_search(document.getElementById('search-text').value)
-    )
+    $('#search-submit-button').click(() => {
+        submit_search($('#search-text').val())
+    })
 
-    if(q != ''){
-        submit_search(q)
-    }
+    submit_search(q)
 })
-
