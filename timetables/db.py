@@ -50,14 +50,14 @@ class TimetableDatabase:
                 name TEXT,
                 name_long TEXT,
                 desc TEXT,
-                headsign TEXT
+                origin TEXT,
+                dst TEXT  
             );
             CREATE TABLE IF NOT EXISTS Trips (
                 id TEXT PRIMARY KEY,
                 route TEXT,
                 direction TEXT,
-                service TEXT,
-                headsign TEXT
+                service TEXT
             );
             CREATE TABLE IF NOT EXISTS Services (
                 id TEXT PRIMARY KEY,
@@ -115,10 +115,10 @@ class TimetableDatabase:
             'INSERT OR IGNORE INTO Agencies (id, name, url) VALUES(?, ?, ?)'
         )
         self._parse_and_import(cur, feed.parse_trips,
-            'INSERT OR IGNORE INTO Trips (id, route, direction, service, headsign) VALUES(?, ?, ?, ?, ?)'
+            'INSERT OR IGNORE INTO Trips (id, route, direction, service) VALUES(?, ?, ?, ?)'
         )
         self._parse_and_import(cur, feed.parse_routes,
-            'INSERT OR IGNORE INTO Routes (id, agency, name, name_long, desc, headsign) VALUES(?, ?, ?, ?, ?, ?)'
+            'INSERT OR IGNORE INTO Routes (id, agency, name, name_long, desc, origin, dst) VALUES(?, ?, ?, ?, ?, ?, ?)'
         )
         self._parse_and_import(cur, feed.parse_service,"""
             INSERT OR IGNORE INTO Services (id, monday, tuesday, wednesday, thursday, friday, saturday, sunday, start_date, end_date)
@@ -159,7 +159,7 @@ class TimetableDatabase:
 
         schema = ('type', 'id', 'name', 'agency_name', 'agency_url', 'stop_code')
 
-        return [self._result_to_dict(result, schema) for result in results], True
+        return [dbhelpers.result_to_dict(result, schema) for result in results], True
 
     # (code, name, lat, long)
     def get_stop_data(self, stop_id):
@@ -174,7 +174,7 @@ class TimetableDatabase:
         schema = ('name', 'name2', 'stop_lat', 'stop_lon', 'stop_code',
                     'stop_indicator', 'stop_bearing', 'stop_landmark', 'stop_town', 'stop_locality')
 
-        return self._result_to_dict(result, schema), True
+        return dbhelpers.result_to_dict(result, schema), True
     
     # (name, desc, agency_name, agency_url)
     def get_route_data(self, route_id):
@@ -193,7 +193,7 @@ class TimetableDatabase:
 
         schema = ('name', 'name2', 'agency_name', 'agency_url')
 
-        return self._result_to_dict(result, schema), True
+        return dbhelpers.result_to_dict(result, schema), True
 
     def get_stop_times(self, stop_id):
         conn = sqlite3.connect(self.path)
@@ -219,7 +219,7 @@ class TimetableDatabase:
                                 'direction', 'entity_id', 'entity_name', 'service_days', 'service_start',
                                 'service_end')
 
-        return [self._result_to_dict(result, schema) for result in results], True
+        return [dbhelpers.result_to_dict(result, schema) for result in results], True
 
     def get_route_times(self, route_id):
         conn = sqlite3.connect(self.path)
@@ -245,6 +245,6 @@ class TimetableDatabase:
                                 'direction', 'entity_id', 'entity_name', 'service_days', 'service_start',
                                 'service_end')
 
-        return [self._result_to_dict(res, schema) for res in results], True
+        return [dbhelpers.result_to_dict(res, schema) for res in results], True
 
 instance = TimetableDatabase('db/timetables.db')

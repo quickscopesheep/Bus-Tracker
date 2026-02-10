@@ -77,8 +77,7 @@ class GTFSFeed:
                 row.get('trip_id', ''),
                 row.get('route_id', ''),
                 row.get('direction_id', ''),
-                row.get('service_id', ''),
-                row.get('trip_headsign', '')
+                row.get('service_id', '')
             )
             yield trip
 
@@ -96,10 +95,12 @@ class GTFSFeed:
             if len(inbound_headsigns) == 0 or len(outbound_headsigns) == 0:
                 continue
 
-            computed_headsigns[route_id] = (inbound_headsigns[0], outbound_headsigns[0])
+            computed_headsigns[route_id] = (inbound_headsigns[0].name, outbound_headsigns[0].name)
         
         #remove reference as no longer need the large amount of data stored
         self._route_headsigns = None
+
+        return computed_headsigns
 
     #(id, agency, name, longer name, desc)
     def parse_routes(self):
@@ -111,13 +112,16 @@ class GTFSFeed:
         headsigns = self._process_headsigns()
 
         for row in reader:
+            headsign = headsigns.get(row.get('route_id'), ('', ''))
+
             yield (
                 row.get('route_id', ''),
                 row.get('agency_id', ''),
                 row.get('route_short_name', ''),
                 row.get('route_long_name', ''),
                 row.get('route_desc', ''),
-                headsigns.get(row.get('route_id'), '')
+                headsign[0],
+                headsign[1]
             )
 
     def parse_service(self):

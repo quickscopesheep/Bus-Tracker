@@ -3,8 +3,6 @@ import sqlite3
 import requests
 from google.transit import gtfs_realtime_pb2
 
-from apscheduler.schedulers.background import BackgroundScheduler
-
 import os
 import time
 import dotenv
@@ -25,12 +23,6 @@ class MapDB:
         self.currentFeed = None
 
         self._init_db()
-        self.fetch_feed()
-
-    def init_scheduler(self):
-        self.scheduler = BackgroundScheduler()
-        self.scheduler.add_job(self.fetch_feed, "interval", seconds=UPDATE_FREQUENCY)
-        self.scheduler.start()
 
     def _init_db(self):
         conn = sqlite3.connect(self.path)
@@ -51,8 +43,6 @@ class MapDB:
             );
         """)
 
-        pass
-
     #(id, route, trip, lon, lat, bearing, licencePlate, timestamp)
     def _handle_vehicle_message(self):
         for entity in self.currentFeed.entity:
@@ -70,7 +60,6 @@ class MapDB:
                 )
 
     def fetch_feed(self):
-        print("fetching feed")
         response = requests.get(f'{GTFS_REALTIME_URL}?api_key={API_KEY}&')
 
         if not response.ok:

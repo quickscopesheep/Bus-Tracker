@@ -9,8 +9,6 @@ from busmap import db as mdb
 app = flask.Flask(__name__)
 app.register_blueprint(api_bp)
 
-mdb.instance.init_scheduler()
-
 @app.route('/search')
 @app.route('/')
 def search_route():
