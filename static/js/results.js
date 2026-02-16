@@ -8,6 +8,7 @@ function get_result_html(row){
     else
         return `
             <span class='result-field result-name'> ${row.name} </span>
+            ${row.orign != "" && row.dst != "" ? `<span class='result-field result-sub-name'> (${row.origin + ' - ' + row.dst}) </span>` : ""}
             <span class='result-field result-info'> operated by: ${row.agency_name} </span>
             <span class='result-field result-type'> Route </span>
         `
@@ -39,14 +40,15 @@ function render_results(data) {
 
 function submit_search(q) {
     $.get(`/api/search?q=${q}`, (data, status) => {
+        console.log(status)
         if(status != 'success'){
-            //window.location.replace(`/error?code=400&msg=search request failed`)
+            window.location.replace(`/error?code=400&msg=search request failed`)
         }else {
             console.log(data)
 
             json = JSON.parse(data)
             if(!json.ok){
-                //window.location.replace(`/error?code=400&msg=invalid search response`)
+                window.location.replace(`/error?code=400&msg=invalid search response`)
             }
 
             render_results(json.data)

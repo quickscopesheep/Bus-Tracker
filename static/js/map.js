@@ -1,4 +1,4 @@
-const ACCESS_TOKEN = "pk.eyJ1Ijoibm9haHdoZXdhbGwiLCJhIjoiY21sYXNzd2VkMGcyZDNkcXV0aGF1Y3hmZyJ9.hyH7YmrvYgdgV8uq_S529g"
+const ACCESS_TOKEN = 'pk.eyJ1Ijoibm9haHdoZXdhbGwiLCJhIjoiY21sYXNzd2VkMGcyZDNkcXV0aGF1Y3hmZyJ9.hyH7YmrvYgdgV8uq_S529g'
 
 class Vehicle {
     constructor(id, trip, lon, lat, bearing, timestamp){
@@ -6,7 +6,7 @@ class Vehicle {
         this.trip = trip
 
         let element = document.createElement('img')
-        element.src = "static/img/bus.svg"
+        element.src = 'static/img/bus.svg'
         element.w = 32
         element.h = 32
 

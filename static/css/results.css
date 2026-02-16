@@ -52,6 +52,12 @@
     font-size: medium;
 }
 
+.result-sub-name{
+    float: left;
+    font-size: medium;
+    color: #818181;
+}
+
 .result-type{
     height: 100%;
     float: right;

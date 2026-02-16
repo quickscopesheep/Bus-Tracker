@@ -12,6 +12,10 @@
     max-height: 50vh;
 }
 
+#bookmark-button{
+    float: right;
+}
+
 tr:nth-child(even) {
   background-color: #eeeeee;
 }

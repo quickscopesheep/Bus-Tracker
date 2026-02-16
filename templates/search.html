@@ -6,11 +6,14 @@
 
 {% block content %}
 <div id="search-container">
-    <form id="search-form"action="/results" method="get">
-        <div id = "search-box-container">
-            <input id="search-box"type="text" placeholder="bus route, bus stop" name="q" autocomplete="off">
+    <form action="/results" method="get">
+        <div class="row">
+            <input class="search-input" type="text" placeholder="Bus, Stop, Destination" name="q">
+            <button id="bookmarks-button" type="button" class="form-input fav-button"><img src="{{url_for('static', filename='img/bookmark.svg')}}"></button>
         </div>
-        <input id="search-submit"type="submit">
+        <div class="row">
+            <input class="submit-input" type="submit" value="Search">
+        </div>
     </form>
 </div>
 {% endblock %}

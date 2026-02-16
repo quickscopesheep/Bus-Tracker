@@ -106,7 +106,24 @@ class TimetableDatabase:
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
 
+        #clear all tables
+
+        print('clearing db')
+        cur.execute('DROP INDEX IF EXISTS TripsRoute')
+        cur.execute('DROP INDEX IF EXISTS TimesTrip')
+        cur.execute('DROP INDEX IF EXISTS TimesStop')
+
+        cur.execute('DELETE FROM Stops')
+        cur.execute('DELETE FROM Agencies')
+        cur.execute('DELETE FROM Trips')
+        cur.execute('DELETE FROM Routes')
+        cur.execute('DELETE FROM Services')
+        cur.execute('DELETE FROM ServiceDates')
+        cur.execute('DELETE FROM Times')
+
         naptan = NaptanImporter(naptan_path, feed.parse_stops())
+
+        print('parsing data')
         dbhelpers.parse_and_import(cur, naptan.parse_stops,
             """INSERT OR IGNORE INTO Stops (id, atco, name, name_short, indicator, bearing, lat, lon, street, landmark, town, nptg_locality, locality_name)
             VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
@@ -132,6 +149,11 @@ class TimetableDatabase:
                 sequence, timepoint) VALUES(?, ?, ?, ?, ?, ?)
         """)
         
+        print('creating indices')
+        cur.execute('CREATE INDEX TripsRoute ON Trips(route)')
+        cur.execute('CREATE INDEX TimesTrip ON Times(trip)')
+        cur.execute('CREATE INDEX TimesStop ON Times(stop)')
+
         conn.commit()
 
     def get_search_result(self, search_body):
@@ -142,12 +164,12 @@ class TimetableDatabase:
         pattern = f'%{search_body}%'
 
         cur.execute("""
-            SELECT DISTINCT 'route' as type, r.id as id, r.name as name, a.name as agency_name, a.url as agency_url, '' as stop_code
+            SELECT DISTINCT 'route' as type, r.id as id, r.name as name, r.origin as origin, r.dst as dst, a.name as agency_name, a.url as agency_url, '' as stop_code
 	            FROM Routes r
 	            JOIN Agencies a ON r.agency = a.id
 	            WHERE r.name LIKE ?
             UNION
-            SELECT DISTINCT 'stop' as type, s.id as id, s.name as name, '' as agency_name, '' as agency_url, s.atco as stop_code
+            SELECT DISTINCT 'stop' as type, s.id as id, s.name as name, '' as origin, '' as dst, '' as agency_name, '' as agency_url, s.atco as stop_code
 	            FROM Stops s
 	            WHERE s.name LIKE ?
                 LIMIT 50;
@@ -157,7 +179,7 @@ class TimetableDatabase:
         #can return zero here as may be empty search
         if results == None: return [], True
 
-        schema = ('type', 'id', 'name', 'agency_name', 'agency_url', 'stop_code')
+        schema = ('type', 'id', 'name', 'origin', 'dst', 'agency_name', 'agency_url', 'stop_code')
 
         return [dbhelpers.result_to_dict(result, schema) for result in results], True
 

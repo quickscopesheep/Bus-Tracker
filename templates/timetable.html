@@ -7,8 +7,7 @@
 
 <div id="timetable-header">
     <h2 id="timetable-title"></h2>
-    <div id="timetable-info">
-    </div>
+    <div id="timetable-info"></div>
 </div>
 
 <div id="timetable-settings">
@@ -29,6 +28,9 @@
         <option value="1">Outbound</option>
         <option value="0">Inbound</option>
     </select>
+    <button id="bookmark-button">
+        <img id="bookmark-image" src="{{url_for('static', filename='img/bookmark.svg')}}">
+    </button>
 </div>
 
 <div id="timetable-container">

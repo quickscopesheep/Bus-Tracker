@@ -28,6 +28,8 @@ class Trip {
 let app_state = {
     type: null,
     id: null,
+
+    info: null,
     timetable_data: null
 }
 
@@ -91,21 +93,21 @@ function render_timetable() {
     $('#table-entity-header').text(app_state.type == 'route' ? 'Stop' : 'Route')
 }
 
-function render_header(info) {
+function render_header() {
     $('#timetable-title').html(`
-        ${info.name}
-        ${info.name2 != '' ? `<span>(${info.name2})</span>` : ''}
+        ${app_state.info.name}
+        ${app_state.info.name2 != '' ? `<span>(${app_state.info.name2})</span>` : ''}
     `)
 
     if(app_state.type === 'stop'){
         $('#timetable-info').html(`
-            <span>atco: ${info.stop_code}</span>
-            <span>locality: ${info.stop_locality}</span>
-            <span>town: ${info.stop_town}</span>
+            <span>atco: ${app_state.info.stop_code}</span>
+            <span>locality: ${app_state.info.stop_locality}</span>
+            <span>town: ${app_state.info.stop_town}</span>
         `)
     }else{
         $('#timetable-info').html(`
-            <span>operated by <a href=${info.agency_url}>${info.agency_name}</a></span>
+            <span>operated by <a href=${app_state.info.agency_url}>${app_state.info.agency_name}</a></span>
         `)
     }
 }
@@ -113,6 +115,13 @@ function render_header(info) {
 function refresh_timetable(){
     $('.generated-table-row').remove()
     render_timetable()
+}
+
+function is_bookmarked(){
+}
+
+function toggle_bookmarked() {
+    
 }
 
 $(document).ready(() => {
@@ -135,7 +144,8 @@ $(document).ready(() => {
             json = JSON.parse(data)
             if(!json.ok) window.location.replace(`/error?code=400&msg=${app_state.type} invald info response`)
             
-                render_header(json.data)
+            app_state.info = json.data
+            render_header()
         }
     })
 
