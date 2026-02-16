@@ -4,12 +4,17 @@
 
 #timetable-settings {
     padding: 2em;
+    display: flex;
+    gap: 0.5rem;
+}
+
+#bookmark-button {
+    aspect-ratio: 1/1;
 }
 
 #timetable-container {
     overflow: auto;
     max-width: 100%;
-    max-height: 50vh;
 }
 
 tr:nth-child(even) {

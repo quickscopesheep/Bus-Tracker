@@ -1,3 +1,5 @@
+import { Bookmarks } from "./bookmark.js"
+
 class Entity {
     constructor(id, name) {
         this.id = id
@@ -28,11 +30,13 @@ class Trip {
 let app_state = {
     type: null,
     id: null,
-    timetable_data: null
+    timetable_data: null,
+    info: null,
+    bookmarks: null
 }
 
 function organise_timetable_data(data){
-    entities_map = new Map()
+    let entities_map = new Map()
 
     data.forEach(t => {
         if(!entities_map.has(t.entity_id))
@@ -77,10 +81,10 @@ function render_timetable() {
         let row = $('<tr></tr>')
             .addClass('generated-table-row')
             .appendTo('#timetable')
-        row.append(`<td>${e.name}</td>`)
+            .append(`<td>${e.name}</td>`)
 
         trips.forEach((t) => {
-            time_element = $('<td></td>')
+            $('<td></td>')
                 .appendTo(row)
                 .text(t.times.has(e.id) ? t.times.get(e.id) : '')
         })
@@ -91,28 +95,41 @@ function render_timetable() {
     $('#table-entity-header').text(app_state.type == 'route' ? 'Stop' : 'Route')
 }
 
-function render_header(info) {
+function render_header() {
     $('#timetable-title').html(`
-        ${info.name}
-        ${info.name2 != '' ? `<span>(${info.name2})</span>` : ''}
+        ${app_state.info.name}
+        ${app_state.info.name2 != '' ? `<span>(${info.name2})</span>` : ''}
     `)
 
     if(app_state.type === 'stop'){
         $('#timetable-info').html(`
-            <span>atco: ${info.stop_code}</span>
-            <span>locality: ${info.stop_locality}</span>
-            <span>town: ${info.stop_town}</span>
+            <span>atco: ${app_state.info.stop_code}</span>
+            <span>locality: ${app_state.info.stop_locality}</span>
+            <span>town: ${app_state.info.stop_town}</span>
         `)
     }else{
         $('#timetable-info').html(`
-            <span>operated by <a href=${info.agency_url}>${info.agency_name}</a></span>
+            <span>operated by <a href=${app_state.info.agency_url}>${app_state.info.agency_name}</a></span>
         `)
     }
 }
 
-function refresh_timetable(){
-    $('.generated-table-row').remove()
-    render_timetable()
+function update_bookmark_image(){
+    if(app_state.bookmarks.is_bookmarked(app_state.id)){
+        $('#bookmark-button img').attr('src', 'static/img/bookmark_checked.svg')
+    }else{
+        $('#bookmark-button img').attr('src', 'static/img/bookmark.svg')
+    }
+}
+
+function toggle_bookmarked(){
+    if(app_state.bookmarks.is_bookmarked(app_state.id)){
+        app_state.bookmarks.remove_bookmark(app_state.id)
+    }else{
+        app_state.bookmarks.add_bookmark(app_state.id, app_state.info)
+    }
+
+    update_bookmark_image()
 }
 
 $(document).ready(() => {
@@ -120,6 +137,11 @@ $(document).ready(() => {
     app_state.type = params.get('type')
     app_state.id = params.get('id')
 
+    app_state.bookmarks = new Bookmarks()
+    update_bookmark_image()
+
+    $('#bookmark-button').click(toggle_bookmarked)
+    
     $('#timetable-title').text('Loading...')
     $('#table-header').hide()
 
@@ -132,18 +154,19 @@ $(document).ready(() => {
         if(status != 'success'){
             window.location.replace(`/error?code=400&msg=${app_state.type} info request failed`)
         }else{
-            json = JSON.parse(data)
+            const json = JSON.parse(data)
             if(!json.ok) window.location.replace(`/error?code=400&msg=${app_state.type} invald info response`)
             
-                render_header(json.data)
+            app_state.info = json.data
+            render_header()
         }
     })
 
-    fetch_timetable = () => $.get(`api/${app_state.type}/timetable?id=${app_state.id}`, (data, status) => {
+    const fetch_timetable = () => $.get(`api/${app_state.type}/timetable?id=${app_state.id}`, (data, status) => {
         if(status != 'success'){
             window.location.replace(`/error?code=400&msg=${app_state.type} timetable request failed`)
         }else{
-            json = JSON.parse(data)
+            const json = JSON.parse(data)
             if(!json.ok) window.location.replace(`/error?code=400&msg=${app_state.type} invald timetable response`)
 
             app_state.timetable_data = json.data
@@ -151,7 +174,7 @@ $(document).ready(() => {
         }
     })
 
-    refresh_timetable = () => {
+    const refresh_timetable = () => {
         $('.generated-table-row').remove()
         render_timetable()
     }

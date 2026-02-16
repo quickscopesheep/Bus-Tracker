@@ -13,12 +13,16 @@ body {
     flex-wrap: wrap;
     flex-direction: column;
     width: 75vw;
+    height: 100%;
     justify-content: center;
 }
 
 .nav-list {
+    width: 100%;
+    position:fixed;
     list-style-type: none;
     margin: 0;
+    padding: 0;
     overflow: hidden;
     background-color: #eeeeee;
 
