@@ -1,6 +1,40 @@
+<<<<<<< HEAD
 form {
     width: 50%;
     margin: 20vh auto;
+}
+=======
+#search-container{
+    margin: auto;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+#search-form{
+    width: 75%;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+#search-box-container {
+    display: flex;
+    height: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+#search-box {
+    flex: 2;
+}
+
+#fav-button {
+    aspect-ratio: 1;
+}
+
+#search-submit {
+    height: 2rem;
+>>>>>>> c0fb7cd195c4c548e73a0273b77c8a57a88ecee7
 }
 
 input {
