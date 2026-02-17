@@ -9,11 +9,15 @@
     <form action="/results" method="get">
         <div class="row">
             <input class="search-input" type="text" placeholder="Bus, Stop, Destination" name="q">
-            <button id="bookmarks-button" type="button" class="form-input fav-button"><img src="{{url_for('static', filename='img/bookmark.svg')}}"></button>
+            <button id="bookmarks-button" type="button" class="form-input fav-button"><img src="{{url_for('static', filename='img/bookmarks.svg')}}"></button>
+        </div>
+        <div class="row" id="bookmarks-container">
+            <p id="no-bookmarks-text">no bookmarks...</p>
         </div>
         <div class="row">
             <input class="submit-input" type="submit" value="Search">
         </div>
     </form>
 </div>
+<script type="module" src="{{url_for('static', filename='js/search.js')}}"></script>
 {% endblock %}

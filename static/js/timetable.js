@@ -126,17 +126,10 @@ function toggle_bookmarked(){
     if(app_state.bookmarks.is_bookmarked(app_state.id)){
         app_state.bookmarks.remove_bookmark(app_state.id)
     }else{
-        app_state.bookmarks.add_bookmark(app_state.id, app_state.info)
+        app_state.bookmarks.add_bookmark(app_state.id, app_state.info.name, window.location.toString())
     }
 
     update_bookmark_image()
-}
-
-function is_bookmarked(){
-}
-
-function toggle_bookmarked() {
-    
 }
 
 $(document).ready(() => {

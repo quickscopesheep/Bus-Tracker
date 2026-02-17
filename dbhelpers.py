@@ -12,6 +12,6 @@ def parse_and_import(cur, parse_func, sql):
         cur.executemany(sql, chunk)
 
 def result_to_dict(result, schema):
-        return {
-            schema[i]: result[i] for i in range(len(schema))
-        }
+    return {
+        schema[i]: result[i] for i in range(len(schema))
+    }
