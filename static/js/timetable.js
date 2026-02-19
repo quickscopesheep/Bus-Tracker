@@ -150,30 +150,6 @@ $(document).ready(() => {
         $('#direction').hide()
     }
 
-    $.get(`api/${app_state.type}/info?id=${app_state.id}`, (data, status) => {
-        if(status != 'success'){
-            window.location.replace(`/error?code=400&msg=${app_state.type} info request failed`)
-        }else{
-            const json = JSON.parse(data)
-            if(!json.ok) window.location.replace(`/error?code=400&msg=${app_state.type} invald info response`)
-            
-            app_state.info = json.data
-            render_header()
-        }
-    })
-
-    const fetch_timetable = () => $.get(`api/${app_state.type}/timetable?id=${app_state.id}`, (data, status) => {
-        if(status != 'success'){
-            window.location.replace(`/error?code=400&msg=${app_state.type} timetable request failed`)
-        }else{
-            const json = JSON.parse(data)
-            if(!json.ok) window.location.replace(`/error?code=400&msg=${app_state.type} invald timetable response`)
-
-            app_state.timetable_data = json.data
-            render_timetable(app_state.timetable_data)
-        }
-    })
-
     const refresh_timetable = () => {
         $('.generated-table-row').remove()
         render_timetable()
@@ -183,5 +159,27 @@ $(document).ready(() => {
     $('#timing-status').change(() => refresh_timetable())
     $('#direction').change(() => refresh_timetable())
 
-    fetch_timetable()
+    const send_to_errorpage = (msg) => window.location.replace(`/error?msg=${msg}`)
+    const fetch_json_or_error = async (url, cb) => {
+        const res = await fetch(url)
+        if(!res.ok){
+            send_to_errorpage(`couldnt fetch ${url} : code: ${res.status}, info: ${res.statusText}`)
+        }
+
+        const json = await(res.json())
+        cb(json)
+    }
+    
+    fetch_json_or_error(`/api/${app_state.type}/info?id=${app_state.id}`, (json) => {
+        if(!json.ok) send_to_errorpage('invalid request parameters')
+
+        app_state.info = json.data
+        render_header()
+    })
+    fetch_json_or_error(`/api/${app_state.type}/timetable?id=${app_state.id}`, (json) => {
+        if(!json.ok) send_to_errorpage('invalid request parameters')
+        
+        app_state.timetable_data = json.data
+        render_timetable()
+    })
 })

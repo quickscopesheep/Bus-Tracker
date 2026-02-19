@@ -15,6 +15,7 @@
 #timetable-container {
     overflow: auto;
     max-width: 100%;
+    max-height: 50vh;
 }
 
 #bookmark-button{
