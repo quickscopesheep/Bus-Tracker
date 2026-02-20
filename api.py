@@ -9,9 +9,35 @@ from datetime import datetime
 
 api_bp = flask.Blueprint('api', __name__, url_prefix = '/api')
 
+@api_bp.route('/search-num-results')
+def api_search_num_results():
+    result, ok = tdb.instance.get_search_result(
+        flask.request.args.get('q')
+    )
+
+    return json.dumps({
+        'ok': ok,
+        'page_size': result
+    })
+
 @api_bp.route('/search')
 def api_search_route():
-    result, ok = tdb.instance.get_search_result(flask.request.args.get('q'))
+    MAX_PAGE_SIZE = 20
+
+    offset = flask.request.args.get('offset')
+    size = flask.request.args.get('size')
+
+    if offset == None or size == None:
+        return json.dumps({
+        'ok': ok,
+        'page_size': result
+    })
+
+    result, ok = tdb.instance.get_search_result(
+        flask.request.args.get('q'),
+        int(offset),
+        min(int(size), MAX_PAGE_SIZE) 
+    )
 
     return json.dumps({
         'ok': ok,

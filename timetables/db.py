@@ -156,7 +156,26 @@ class TimetableDatabase:
 
         conn.commit()
 
-    def get_search_result(self, search_body):
+    def get_search_num_results(self, search_body):
+        conn = sqlite3.connect(self.path)
+        cur = conn.cursor()
+
+        pattern = f'%{search_body}%'
+
+        cur.execute("""
+            SELECT DISTINCT COUNT(*)
+	            FROM Routes r
+	            WHERE r.name LIKE ?
+            UNION
+            SELECT DISTINCT COUNT(*)
+	            FROM Stops s
+	            WHERE s.name LIKE ?
+        """, (pattern, pattern))
+
+        results = cur.fetchone()
+        return int(results[0]), True
+
+    def get_search_result(self, search_body, page_offset, page_size):
         #def should escape body for special chars to avoid SQL injection
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
@@ -172,8 +191,8 @@ class TimetableDatabase:
             SELECT DISTINCT 'stop' as type, s.id as id, s.name as name, '' as origin, '' as dst, '' as agency_name, '' as agency_url, s.atco as stop_code
 	            FROM Stops s
 	            WHERE s.name LIKE ?
-                LIMIT 50;
-        """, (pattern, pattern))
+            LIMIT ? OFFSET ?;
+        """, (pattern, pattern, page_size, page_offset))
 
         results = cur.fetchall()
         #can return zero here as may be empty search
