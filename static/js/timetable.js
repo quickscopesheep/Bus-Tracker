@@ -1,4 +1,5 @@
 import { Bookmarks } from "./bookmark.js"
+import {send_to_errorpage, fetch_json_or_error} from "./helpers.js"
 
 class Entity {
     constructor(id, name) {
@@ -158,17 +159,6 @@ $(document).ready(() => {
     $('#service-day').change(() => refresh_timetable())
     $('#timing-status').change(() => refresh_timetable())
     $('#direction').change(() => refresh_timetable())
-
-    const send_to_errorpage = (msg) => window.location.replace(`/error?msg=${msg}`)
-    const fetch_json_or_error = async (url, cb) => {
-        const res = await fetch(url)
-        if(!res.ok){
-            send_to_errorpage(`couldnt fetch ${url} : code: ${res.status}, info: ${res.statusText}`)
-        }
-
-        const json = await(res.json())
-        cb(json)
-    }
     
     fetch_json_or_error(`/api/${app_state.type}/info?id=${app_state.id}`, (json) => {
         if(!json.ok) send_to_errorpage('invalid request parameters')

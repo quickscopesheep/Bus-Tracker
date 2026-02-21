@@ -10,10 +10,16 @@
 <div id="search-container">
     <input id="search-text" type="text" autocomplete="off">
     <input id="search-submit-button" type="button" value="Search">
+    <div class="page-controls">
+        <label>page number: </label>
+        <input id="page-number-input" type="number" value="1" min="1">
+        <label>page size: </label>
+        <input id="page-size-input" type="number" value="10" max="20" min="1">
+    </div>
 </div>
 <p id="no-results-warning">No Results</p>
 <div id="results-container">
 </div>
 
-<script src="{{url_for('static', filename='js/results.js')}}"></script>
+<script type="module" src="{{url_for('static', filename='js/results.js')}}"></script>
 {% endblock %}

@@ -161,19 +161,29 @@ class TimetableDatabase:
         cur = conn.cursor()
 
         pattern = f'%{search_body}%'
+        total = 0
 
         cur.execute("""
             SELECT DISTINCT COUNT(*)
 	            FROM Routes r
-	            WHERE r.name LIKE ?
-            UNION
+	            WHERE r.name LIKE :pattern;
+        """, {
+            "pattern": pattern
+        })
+
+        total += int(cur.fetchone()[0])
+
+        cur.execute("""
             SELECT DISTINCT COUNT(*)
 	            FROM Stops s
-	            WHERE s.name LIKE ?
-        """, (pattern, pattern))
+	            WHERE s.name LIKE :pattern;
+        """, {
+            "pattern": pattern
+        })
 
-        results = cur.fetchone()
-        return int(results[0]), True
+        total += int(cur.fetchone()[0])
+        
+        return total, True
 
     def get_search_result(self, search_body, page_offset, page_size):
         #def should escape body for special chars to avoid SQL injection

@@ -11,7 +11,7 @@ api_bp = flask.Blueprint('api', __name__, url_prefix = '/api')
 
 @api_bp.route('/search-num-results')
 def api_search_num_results():
-    result, ok = tdb.instance.get_search_result(
+    result, ok = tdb.instance.get_search_num_results(
         flask.request.args.get('q')
     )
 
@@ -24,19 +24,22 @@ def api_search_num_results():
 def api_search_route():
     MAX_PAGE_SIZE = 20
 
-    offset = flask.request.args.get('offset')
-    size = flask.request.args.get('size')
+    offset = None
+    size = None
 
-    if offset == None or size == None:
+    try:
+        offset = int(flask.request.args.get('offset'))
+        size = min(int(flask.request.args.get('size')), MAX_PAGE_SIZE)
+    except:
         return json.dumps({
-        'ok': ok,
-        'page_size': result
-    })
+            'ok': False,
+            'page_size': {}
+        })
 
     result, ok = tdb.instance.get_search_result(
         flask.request.args.get('q'),
-        int(offset),
-        min(int(size), MAX_PAGE_SIZE) 
+        offset,
+        size
     )
 
     return json.dumps({
