@@ -63,8 +63,8 @@ const app_state = {
 
     num_results: null,
 
-    page_size: null,
-    page_no: null,
+    page_size: 20,
+    page_no: 1,
 
     pages : new Map()
 }
@@ -74,6 +74,8 @@ function get_result_html(row){
         return `
             <span class='result-field result-name'> ${row.name} </span>
             <span class='result-field result-info'> atco: ${row.stop_code} </span>
+            <span class='result-field result-info'> bearing: ${row.bearing} </span>
+            <span class='result-field result-info'> ${row.locality} </span>
             <span class='result-field result-type'> Stop </span>
         `
     else
@@ -125,29 +127,22 @@ $(document).ready(() => {
     const params = new URLSearchParams(window.location.search)
     app_state.search_body = params.get('q', '')
 
+    $('#search-text').val(app_state.search_body)
+
     $('#search-submit-button').click(() => {
         window.location.href = `/results?q=${$('#search-text').val()}`
     })
 
-    const set_page_size = () => {
-        app_state.page_size = parseInt($('#page-size-input').val())
-        $("#page-number-input").attr('max', Math.ceil(app_state.num_results / app_state.page_size))
-    }
-    
-    $('#page-size-input').change(set_page_size)
-    set_page_size()
 
-    const set_page_no = () => {
+    $('#page-number-input').change(() => {
         app_state.page_no = parseInt($('#page-number-input').val())
         render_page()
-    }
-
-    $('#page-number-input').change(set_page_no)
-    set_page_no()
+    })
 
     fetch_json_or_error(`/api/search-num-results?q=${app_state.search_body}`, (json) => {
         if(!json.ok)
             send_to_errorpage('could not fetch number of results')
-        app_state.num_results = json.page_size
+        app_state.num_results = json.num_results
+        $('#page-number-input').attr('max', Math.ceil(app_state.num_results/app_state.page_size))
     }).then(render_page)
 })

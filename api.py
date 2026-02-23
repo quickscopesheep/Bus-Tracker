@@ -17,7 +17,7 @@ def api_search_num_results():
 
     return json.dumps({
         'ok': ok,
-        'page_size': result
+        'num_results': result
     })
 
 @api_bp.route('/search')
@@ -33,7 +33,7 @@ def api_search_route():
     except:
         return json.dumps({
             'ok': False,
-            'page_size': {}
+            'data': {}
         })
 
     result, ok = tdb.instance.get_search_result(

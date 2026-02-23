@@ -193,22 +193,28 @@ class TimetableDatabase:
         pattern = f'%{search_body}%'
 
         cur.execute("""
-            SELECT DISTINCT 'route' as type, r.id as id, r.name as name, r.origin as origin, r.dst as dst, a.name as agency_name, a.url as agency_url, '' as stop_code
+            SELECT DISTINCT 'route' as type, r.id as id, r.name as name, r.origin as origin, r.dst as dst, a.name as agency_name, a.url as agency_url, '' as stop_code, '' as bearing, '' as locality
 	            FROM Routes r
 	            JOIN Agencies a ON r.agency = a.id
-	            WHERE r.name LIKE ?
+	            WHERE r.name LIKE :search_query
+                OR r.origin LIKE :search_query
+                OR r.dst LIKE :search_query
             UNION
-            SELECT DISTINCT 'stop' as type, s.id as id, s.name as name, '' as origin, '' as dst, '' as agency_name, '' as agency_url, s.atco as stop_code
+            SELECT DISTINCT 'stop' as type, s.id as id, s.name as name, '' as origin, '' as dst, '' as agency_name, '' as agency_url, s.atco as stop_code, s.bearing as bearing, s.locality_name as locality
 	            FROM Stops s
-	            WHERE s.name LIKE ?
-            LIMIT ? OFFSET ?;
-        """, (pattern, pattern, page_size, page_offset))
+	            WHERE s.name LIKE :search_query
+            LIMIT :size OFFSET :offset;
+        """, {
+            'search_query': pattern,
+            'offset': page_offset,
+            'size': page_size
+        })
 
         results = cur.fetchall()
         #can return zero here as may be empty search
         if results == None: return [], True
 
-        schema = ('type', 'id', 'name', 'origin', 'dst', 'agency_name', 'agency_url', 'stop_code')
+        schema = ('type', 'id', 'name', 'origin', 'dst', 'agency_name', 'agency_url', 'stop_code', 'bearing', 'locality')
 
         return [dbhelpers.result_to_dict(result, schema) for result in results], True
 

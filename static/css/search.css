@@ -1,9 +1,8 @@
-<<<<<<< HEAD
 form {
     width: 50%;
     margin: 20vh auto;
 }
-=======
+
 #search-container{
     margin: auto;
     display: flex;
@@ -34,7 +33,6 @@ form {
 
 #search-submit {
     height: 2rem;
->>>>>>> c0fb7cd195c4c548e73a0273b77c8a57a88ecee7
 }
 
 input {
