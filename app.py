@@ -1,13 +1,20 @@
 import flask
 
+from flask_apscheduler import APScheduler
+
 from api import api_bp
 
 from busmap import db as mdb
 
-#use templates for static stuff. use API route for dynamic stuff eg. autocomplete, bus locations
-
 app = flask.Flask(__name__)
 app.register_blueprint(api_bp)
+
+scheduler = APScheduler()
+scheduler.init_app(app)
+
+scheduler.add_job(id='update_vehicle_poisitions', func=mdb.instance.fetch_feed, trigger='interval', seconds = 10)
+
+scheduler.start()
 
 @app.route('/search')
 @app.route('/')

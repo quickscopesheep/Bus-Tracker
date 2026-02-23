@@ -143,6 +143,10 @@ $(document).ready(() => {
 
     $('#bookmark-button').click(toggle_bookmarked)
     
+    $('#map-button').click(() => {
+        window.location.href = `/map?id=${app_state.id}`
+    })
+
     $('#timetable-title').text('Loading...')
     $('#table-header').hide()
 
