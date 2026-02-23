@@ -1,17 +1,16 @@
 {% extends 'base.html' %}
 
 {% block header %}
-<link rel="stylesheet" href="{{url_for('static', filename='css/timetable.css')}}">
 {% endblock %}
 {% block content %}
 
-<div id="timetable-header">
-    <h2 id="timetable-title"></h2>
-    <div id="timetable-info"></div>
+<div class="block p-4 m-2">
+    <div class="text-xl font-bold" id="timetable-title"></div>
+    <div class="flex gap-2" id="timetable-info"></div>
 </div>
 
-<div id="timetable-settings">
-    <select id="service-day">
+<div class="flex gap-2 flex-wrap">
+    <select id="service-day" class="border-2 hover:outline-4 outline-gray-50 border-gray-200 rounded-xl p-2 min-w-0">
         <option value="0">Monday</option>
         <option value="1">Tuesday</option>
         <option value="2">Wednesday</option>
@@ -20,24 +19,24 @@
         <option value="5">Saturday</option>
         <option value="6">Sunday</option>
     </select>
-    <select id="timing-status">
+    <select class="border-2 hover:outline-4 outline-gray-50 border-gray-200 rounded-xl p-2 min-w-0" id="timing-status">
         <option value="1">Timing Points Only</option>
         <option value="0">All Stops</option>
     </select>
-    <select id="direction">
+    <select class="border-2 hover:outline-4 outline-gray-50 border-gray-200 rounded-xl p-2 min-w-0" id="direction">
         <option value="1">Outbound</option>
         <option value="0">Inbound</option>
     </select>
-    <button class="settings-button" id="bookmark-button"><img></button>
-    <button class="settings-button" id="map-button"><img src="{{url_for('static', filename='img/map.svg')}}"></button>
+    <button class="aspect-square bg-amber-400 hover:bg-amber-300 rounded-xl p-2" id="bookmark-button"><img></button>
+    <button class="aspect-square bg-blue-500 hover:bg-blue-400 rounded-xl p-2" id="map-button"><img src="static/img/map_white.svg"></button>
 </div>
 
-<div id="timetable-container">
-    <div id="table-loading-text">Loading Timetable...</div>
+<div class="max-w-full md:max-w-[50dvw] max-h-[50dvh] overflow-auto m-2">
+    <div id="table-loading-text">Loading...</div>
     <table id="timetable">
-        <tr id="table-header">
-            <th id="table-entity-header">----</th>
-            <th>Times</th>
+        <tr>
+            <th class="border-2 border-gray-100 bg-gray-50" id="table-entity-header">---</th>
+            <th class="border-2 border-gray-100 bg-gray-50" id="table-times-header">Times</th>
         </tr>
     </table>
 </div>

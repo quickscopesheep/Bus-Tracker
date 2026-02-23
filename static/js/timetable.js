@@ -85,7 +85,7 @@ function render_timetable() {
             .append(`<td>${e.name}</td>`)
 
         trips.forEach((t) => {
-            $('<td></td>')
+            $('<td class="p-0.5 border-2 border-gray-50"></td>')
                 .appendTo(row)
                 .text(t.times.has(e.id) ? t.times.get(e.id) : '')
         })
@@ -117,9 +117,9 @@ function render_header() {
 
 function update_bookmark_image(){
     if(app_state.bookmarks.is_bookmarked(app_state.id)){
-        $('#bookmark-button img').attr('src', 'static/img/bookmark_checked.svg')
+        $('#bookmark-button img').attr('src', 'static/img/bookmark_added_white.svg')
     }else{
-        $('#bookmark-button img').attr('src', 'static/img/bookmark.svg')
+        $('#bookmark-button img').attr('src', 'static/img/bookmark_white.svg')
     }
 }
 

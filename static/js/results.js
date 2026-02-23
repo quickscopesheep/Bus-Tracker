@@ -72,18 +72,18 @@ const app_state = {
 function get_result_html(row){
     if(row.type == 'stop')
         return `
-            <span class='result-field result-name'> ${row.name} </span>
-            <span class='result-field result-info'> atco: ${row.stop_code} </span>
-            <span class='result-field result-info'> bearing: ${row.bearing} </span>
-            <span class='result-field result-info'> ${row.locality} </span>
-            <span class='result-field result-type'> Stop </span>
+            <span class='font-bold'> ${row.name} </span>
+            <span class='hidden md:inline text-gray-500'> atco: ${row.stop_code} </span>
+            <span class=' text-gray-500'> bearing: ${row.bearing} </span>
+            <span class='hidden md:inline text-gray-500'> ${row.locality} </span>
+            <span class=' text-gray-600 font-semibold'> Stop </span>
         `
     else
         return `
-            <span class='result-field result-name'> ${row.name} </span>
-            ${row.orign != "" && row.dst != "" ? `<span class='result-field result-sub-name'> (${row.origin + ' - ' + row.dst}) </span>` : ""}
-            <span class='result-field result-info'> operated by: ${row.agency_name} </span>
-            <span class='result-field result-type'> Route </span>
+            <span class='font-bold'> ${row.name} </span>
+            ${row.orign != "" && row.dst != "" ? `<font-bold color-gray-600'> (${row.origin + ' - ' + row.dst}) </span>` : ""}
+            <span class='hidden md:inline text-gray-500'> operated by: ${row.agency_name}</span>
+            <span class='text-gray-800 font-bold p-2'> Route </span>
         `
 }
 
@@ -110,7 +110,7 @@ async function render_page() {
 
     data.forEach((result) => {
         let el = $('<button>')
-            .addClass('result')
+            .addClass('w-full result flex flex-nowrap gap-2 p-4 border-b-4 border-gray-200 hover:bg-gray-100')
             .appendTo('#results-container')
         el.html(get_result_html(result))
         el.click(() => {

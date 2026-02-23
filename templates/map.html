@@ -3,15 +3,14 @@
 {% block header %}
 <title>Map</title>
 
-<link rel="stylesheet" href="{{url_for('static', filename='css/map.css')}}">
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.18.1/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.18.1/mapbox-gl.js"></script>
 {% endblock %}
 
 {% block content %}
 
-<div id="map-container">
-    <div id="map"></div>
+<div class="md:w-7xl aspect-video">
+    <div class="size-full" id="map"></div>
 </div>
 
 <script type="module" src="{{url_for('static', filename='js/map.js')}}"></script>

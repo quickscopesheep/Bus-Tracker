@@ -3,15 +3,24 @@
     <head>
         <link rel="stylesheet" href="{{url_for('static', filename='css/style.css')}}">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
         {% block header %} {% endblock %}
     </head>
     <body>
-        <ul class="nav-list">
-            <li class="nav-title"><a href="search">Bus Tracker</a></li>
-            <li class="nav-link"><a href="/search">Search</a></li>
-        </ul>
+        <nav class="fixed top-0 left-0 min-w-screen bg-white z-10">
+            <div class="w-full mx-auto p-2 pr-4 pl-4 border-b-4 border-gray-100">
+                <div class="flex justify-between items-center h-16">
+                    <span>
+                        <img class="size-8 inline aspect-square" src="static/img/bus.svg">
+                        <a class="leading-16 text-xl font-bold" href="search">Bus Tracker</a>
+                    </span>
+                    <span class="text-xl font-bold"></span>
+                    <span class="text-white font-semibold bg-blue-500 hover:bg-blue-400 rounded-xl p-2 min-w-20 text-center"><a href="/search">Search</a></span>
+                </div>
+            </div>
+        </nav>
 
-        <div id="content-container">{% block content %} {% endblock %}</div>
+        <div id="content-container" class="min-h-screen p-4 flex flex-col items-center justify-center">{% block content %} {% endblock %}</div>
     </body>
 </html>
 
