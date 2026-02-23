@@ -82,3 +82,12 @@ def api_stop_timetable_route():
         'ok': ok,
         'data': result
     })
+
+@api_bp.route('/map/livedata')
+def api_map_livedata():
+    result, ok = mdb.instance.get_vehicle_positions(flask.request.args.get('id'))
+
+    return json.dumps({
+        'ok': ok,
+        'result': result
+    })

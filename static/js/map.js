@@ -1,3 +1,5 @@
+import { fetch_json_or_error, send_to_errorpage } from "./helpers.js"
+
 const ACCESS_TOKEN = 'pk.eyJ1Ijoibm9haHdoZXdhbGwiLCJhIjoiY21sYXNzd2VkMGcyZDNkcXV0aGF1Y3hmZyJ9.hyH7YmrvYgdgV8uq_S529g'
 
 class Vehicle {
@@ -6,6 +8,7 @@ class Vehicle {
         this.trip = trip
 
         let element = document.createElement('img')
+        element.setAttribute('name', this.id)
         element.src = 'static/img/bus.svg'
         element.w = 32
         element.h = 32
@@ -13,7 +16,7 @@ class Vehicle {
         this.marker = new mapboxgl.Marker({
             element: element,
             rotationAlignment: 'map'
-        }).setLngLat([lon, lat]).addTo(map)
+        }).setLngLat([lon, lat]).addTo(app_state.map)
 
         this.setPos(lon, lat, bearing, timestamp)
     }
@@ -25,7 +28,7 @@ class Vehicle {
         this.timestamp = timestamp
 
         this.marker.setLngLat([lon, lat])
-        this.marker.setRotation(bearing)
+        //this.marker.setRotation(bearing)
     }
 
     dispose(){
@@ -39,13 +42,24 @@ let app_state = {
     vehicles: new Map()
 }
 
-function fetchVehiclePositions(){
-    $.get(`/api/map/livedata?id=${app_state.route}`, (data, status) => {
-        if(status != 'success')
-            throw new Error('could not fetch info')
+function get_centre_coordinates() {
+    coords = app_state.vehicles.values().map(v => {
+        return [parseFloat(v.lon) / 180.0 * Math.PI, parseFloat(v.lat) / 180.0 * Math.PI]
+    })
+
+    vectors = coords.map(coord => {
+        return [
+        ]
+    })
+}
+
+function update_vehicle_positions(){
+    fetch_json_or_error(`/api/map/livedata?id=${app_state.route}`, (json) => {
+        if(!json.ok)
+            send_to_errorpage("invalid vehicle position query")
 
         let vehicle_updates = new Map()
-        JSON.parse(data).forEach(e => {
+        Array.from(json.result).forEach(e => {
             vehicle_updates.set(e.vehicle_id, e)
         })
 
@@ -73,6 +87,8 @@ function fetchVehiclePositions(){
         removeList.forEach(toRemove => {
             app_state.vehicles.delete(toRemove)
         })
+
+        console.log(app_state.vehicles)
     })
 }
 
@@ -81,11 +97,16 @@ $(document).ready(() => {
     app_state.route = params.get('id')
 
     mapboxgl.accessToken = ACCESS_TOKEN
-    map = new mapboxgl.Map({
+    app_state.map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/standard',
         projection: 'mercator'
     })
 
-    fetchVehiclePositions()
+    const update_loop = () => {
+        update_vehicle_positions()
+        setTimeout(update_loop, 10*1000)
+    }
+
+    update_loop()
 })

@@ -24,6 +24,7 @@ class MapDB:
 
         self._init_db()
 
+
     def _init_db(self):
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
@@ -60,6 +61,8 @@ class MapDB:
                 )
 
     def fetch_feed(self):
+        print("fetching RT feed")
+        
         response = requests.get(f'{GTFS_REALTIME_URL}?api_key={API_KEY}&')
 
         if not response.ok:
@@ -91,6 +94,8 @@ class MapDB:
                 FROM Vehicles
                 WHERE route = :route_id;
         """, {'route_id':route_id})
-        return [dbhelpers.result_to_dict(row, ('vehicle_id', 'trip_id', 'timestamp', 'lon', 'lat', 'bearing')) for row in cur.fetchall()]
+
+
+        return [dbhelpers.result_to_dict(row, ('vehicle_id', 'trip_id', 'timestamp', 'lon', 'lat', 'bearing')) for row in cur.fetchall()], True
 
 instance = MapDB('db/map.db')

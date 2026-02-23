@@ -3,4 +3,4 @@ dotenv
 requests
 isodate
 gtfs-realtime-bindings
-apscheduler
+flask-apscheduler
