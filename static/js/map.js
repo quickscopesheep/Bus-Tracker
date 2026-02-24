@@ -7,9 +7,10 @@ class Vehicle {
         this.id = id
         this.trip = trip
 
-        let element = document.createElement('img')
-        element.setAttribute('name', this.id)
-        element.src = 'static/img/bus.svg'
+        let element = document.createElement('div')
+        element.className = 'bg-blue-500 rounded-xl p-1'
+        element.innerHTML = '<img src="static/img/bus.svg">'
+        //element.src = 'static/img/bus.svg'
         element.w = 32
         element.h = 32
 
@@ -42,19 +43,8 @@ let app_state = {
     vehicles: new Map()
 }
 
-function get_centre_coordinates() {
-    coords = app_state.vehicles.values().map(v => {
-        return [parseFloat(v.lon) / 180.0 * Math.PI, parseFloat(v.lat) / 180.0 * Math.PI]
-    })
-
-    vectors = coords.map(coord => {
-        return [
-        ]
-    })
-}
-
-function update_vehicle_positions(){
-    fetch_json_or_error(`/api/map/livedata?id=${app_state.route}`, (json) => {
+async function update_vehicle_positions(){
+    await fetch_json_or_error(`/api/map/livedata?id=${app_state.route}`, (json) => {
         if(!json.ok)
             send_to_errorpage("invalid vehicle position query")
 
@@ -103,10 +93,22 @@ $(document).ready(() => {
         projection: 'mercator'
     })
 
-    const update_loop = () => {
-        update_vehicle_positions()
+    const update_loop = async () => {
+        await update_vehicle_positions()
         setTimeout(update_loop, 10*1000)
     }
 
-    update_loop()
+    update_loop().then(() => {
+        let sum = [0, 0]
+        app_state.vehicles.forEach((v, k) => {
+            sum[0] += parseFloat(v.lon)
+            sum[1] += parseFloat(v.lat)
+        })
+
+        sum[0] /= app_state.vehicles.size
+        sum[1] /= app_state.vehicles.size
+
+        app_state.map.setCenter(sum)
+        app_state.map.setZoom(10)
+    })
 })
