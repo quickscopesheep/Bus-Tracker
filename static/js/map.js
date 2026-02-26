@@ -103,6 +103,17 @@ function create_stop_markers() {
     })    
 }
 
+function create_user_icon() {
+    let element = document.createElement('div')
+        element.className = 'bg-amber-400 rounded-xl p-1'
+        element.innerHTML = '<img src="static/img/location.svg">'
+    
+    return new mapboxgl.Marker({
+        element: element,
+        rotationAlignment: 'map'
+    }).setLngLat([0, 0]).addTo(app_state.map)
+}
+
 $(document).ready(() => {
     const params = new URLSearchParams(window.location.search)
     app_state.route = params.get('id')
