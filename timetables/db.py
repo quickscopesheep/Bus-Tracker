@@ -125,7 +125,7 @@ class TimetableDatabase:
 
         print('parsing data')
         dbhelpers.parse_and_import(cur, naptan.parse_stops,
-            """INSERT OR IGNORE INTO Stops (id, atco, name, name_short, indicator, bearing, lat, lon, street, landmark, town, nptg_locality, locality_name)
+            """INSERT OR IGNORE INTO Stops (id, atco, name, name_short, indicator, bearing, lon, lat, street, landmark, town, nptg_locality, locality_name)
             VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
         )
         dbhelpers.parse_and_import(cur, feed.parse_agencies,
@@ -301,6 +301,28 @@ class TimetableDatabase:
         schema = ('trip', 'arrival_time', 'departure_time', 'sequence', 'timing_status',
                                 'direction', 'entity_id', 'entity_name', 'service_days', 'service_start',
                                 'service_end')
+
+        return [dbhelpers.result_to_dict(res, schema) for res in results], True
+
+    def get_stops_on_route(self, route_id):
+        conn = sqlite3.connect(self.path)
+        cur = conn.cursor()
+        
+        cur.execute("""
+            SELECT DISTINCT Stops.id, Stops.name_short, Stops.lon, Stops.lat, Trips.direction
+                FROM Stops
+                JOIN Times ON Times.stop = Stops.id
+                JOIN Trips ON Times.trip = Trips.id
+                JOIN Routes ON Trips.route = Routes.id
+                WHERE Routes.id = :route;
+        """, {
+            'route': route_id
+        })
+
+        results = cur.fetchall()
+        if results == None: return {}, False
+
+        schema = ('id', 'name', 'lon', 'lat', 'direction')
 
         return [dbhelpers.result_to_dict(res, schema) for res in results], True
 

@@ -9,8 +9,14 @@
 
 {% block content %}
 
-<div class="w-7xl aspect-video">
+<div class="pt-16 w-[90dvw] h-[90dvh] flex flex-col">
     <div class="size-full" id="map"></div>
+    <div class="pt-4 flex gap-2">
+        <button class="bg-blue-500 hover:bg-blue-400 hover:cursor-pointer rounded-xl p-2 text-white" id="timetable-button">Go To Timetable</button>
+        <div class="flex items-center">
+            <div class="text-xl font-bold ">Bus Name</div>
+        </div>
+    </div>
 </div>
 
 <script type="module" src="{{url_for('static', filename='js/map.js')}}"></script>

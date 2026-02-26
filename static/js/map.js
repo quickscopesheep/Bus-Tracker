@@ -8,7 +8,7 @@ class Vehicle {
         this.trip = trip
 
         let element = document.createElement('div')
-        element.className = 'bg-blue-500 rounded-xl p-1'
+        element.className = 'bg-blue-500 rounded-xl p-1 z-[5]'
         element.innerHTML = '<img src="static/img/bus.svg">'
         //element.src = 'static/img/bus.svg'
         element.w = 32
@@ -82,6 +82,28 @@ async function update_vehicle_positions(){
     })
 }
 
+function create_stop_markers() {
+    fetch_json_or_error(`/api/map/stops?id=${app_state.route}`, (json) => {
+        const stops = Array.from(json.data)
+        stops.forEach(stop => {
+
+            console.log(stop)
+
+            let element = document.createElement('div')
+            element.className = 'bg-amber-500 rounded-xl p-1 z-[0] hover:cursor-pointer'
+            element.innerHTML = '<img class="size-full" src="static/img/stop.svg">'
+            element.onclick = () => {
+                window.location.href = `/timetable?type=stop&id=${stop.id}`
+            }
+
+            new mapboxgl.Marker({
+                element: element,
+                rotationAlignment: 'map'
+            }).setLngLat([parseFloat(stop.lon), parseFloat(stop.lat)]).addTo(app_state.map)
+        })
+    })    
+}
+
 $(document).ready(() => {
     const params = new URLSearchParams(window.location.search)
     app_state.route = params.get('id')
@@ -92,6 +114,8 @@ $(document).ready(() => {
         style: 'mapbox://styles/mapbox/standard',
         projection: 'mercator'
     })
+
+    create_stop_markers()
 
     const update_loop = async () => {
         await update_vehicle_positions()
