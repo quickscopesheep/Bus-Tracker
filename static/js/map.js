@@ -11,8 +11,6 @@ class Vehicle {
         element.className = 'bg-blue-500 rounded-xl p-1 z-[5]'
         element.innerHTML = '<img src="static/img/bus.svg">'
         //element.src = 'static/img/bus.svg'
-        element.w = 32
-        element.h = 32
 
         this.marker = new mapboxgl.Marker({
             element: element,
@@ -40,7 +38,9 @@ class Vehicle {
 let app_state = {
     route: null,
     map: null,
-    vehicles: new Map()
+    vehicles: new Map(),
+
+    user_marker : null
 }
 
 async function update_vehicle_positions(){
@@ -57,7 +57,6 @@ async function update_vehicle_positions(){
             if(app_state.vehicles.has(v.vehicle_id))
                 app_state.vehicles.get(v.vehicle_id).setPos(v.lon, v.lat, v.bearing, v.timestamp)
             else
-                //TODO: handle when vehicle switches trip, doesnt matter much for now
                 app_state.vehicles.set(v.vehicle_id, new Vehicle(
                     v.vehicle_id,
                     v.trip_id,
@@ -116,6 +115,21 @@ $(document).ready(() => {
     })
 
     create_stop_markers()
+
+    app_state.user_marker = create_user_icon()
+
+    let id = navigator.geolocation.watchPosition((pos) => {
+        console.log(pos)
+        app_state.user_marker.setLngLat([pos.coords.longitude, pos.coords.latitude])
+    }, (err) => {
+        console.log(err.messages)
+        app_state.user_marker.remove()
+        navigator.geolocation.clearWatch(id)
+    }, {
+        enableHighAccuracy: false,
+        timeout: 5000,
+        maximumAge: 0,
+    })
 
     const update_loop = async () => {
         await update_vehicle_positions()

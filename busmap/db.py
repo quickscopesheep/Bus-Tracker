@@ -83,7 +83,6 @@ class MapDB:
         cur.execute("DELETE FROM vehicles WHERE timestamp < ?;", (int(time.time())-300,))
 
         conn.commit()
-        pass
 
     def get_vehicle_positions(self, route_id):
         conn = sqlite3.connect(self.path)
