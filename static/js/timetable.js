@@ -77,12 +77,13 @@ function render_timetable() {
     }
 
     const {entities, trips} = organise_timetable_data(data)
+    const entity_type = app_state.type == 'route' ? 'stop' : 'route'
 
     entities.forEach((e) => {
         let row = $('<tr></tr>')
             .addClass('generated-table-row')
             .appendTo('#timetable')
-            .append(`<td>${e.name}</td>`)
+            .append(`<td><a class="color-blue-500 text-underline" href="/timetable?type=${entity_type}&id=${e.id}">${e.name}</a></td>`)
 
         trips.forEach((t) => {
             $('<td class="p-0.5 border-2 border-gray-50"></td>')
@@ -143,6 +144,7 @@ $(document).ready(() => {
 
     $('#bookmark-button').click(toggle_bookmarked)
     
+    if(app_state.type == 'stop') $('#map-button').hide()
     $('#map-button').click(() => {
         window.location.href = `/map?id=${app_state.id}`
     })
