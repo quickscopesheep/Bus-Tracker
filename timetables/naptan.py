@@ -1,12 +1,15 @@
 from pathlib import Path
 import csv
 
+from typing import Generator
+
 class NaptanImporter:
     def __init__(self, path: Path, ids):
         self.path = path
         self.ids = ids
 
-    def _parse_stop(self, gtfs_id, row):
+    #extracts data from row
+    def _parse_stop(self, gtfs_id : str, row : tuple):
         return (
                 gtfs_id,
                 row.get('ATCOCode'),
@@ -23,8 +26,9 @@ class NaptanImporter:
                 ','.join([row.get('LocalityName', ''), row.get('ParentLocalityName')]),
             )
 
-    #(Name, ShortName, Indicator, Bearing, Lon, Lat, Street, Landmark, Town, Nptg, LocalityName)
-    def parse_stops(self):
+    #reads naptan dataset
+    #returned tuple contains (Name, ShortName, Indicator, Bearing, Lon, Lat, Street, Landmark, Town, Nptg, LocalityName)
+    def parse_stops(self) -> Generator[str, None, None]:
         f = open(self.path)
         reader = csv.DictReader(f)
 

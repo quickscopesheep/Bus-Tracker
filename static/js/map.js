@@ -20,6 +20,7 @@ class Vehicle {
         this.setPos(lon, lat, bearing, timestamp)
     }
 
+    //set position and rotation of marker
     setPos(lon, lat, bearing, timestamp){
         this.lon = lon
         this.lat = lat
@@ -30,6 +31,7 @@ class Vehicle {
         //this.marker.setRotation(bearing)
     }
 
+    //destroy marker
     dispose(){
         this.marker.remove()
     }
@@ -41,6 +43,7 @@ let app_state = {
     vehicles: new Map(),
 }
 
+//fetch and update positions of vehicles
 async function update_vehicle_positions(){
     await fetch_json_or_error(`/api/map/livedata?id=${app_state.route}`, (json) => {
         if(!json.ok)
@@ -77,6 +80,7 @@ async function update_vehicle_positions(){
     })
 }
 
+//fetch stop positions and add markers to map
 function create_stop_markers() {
     fetch_json_or_error(`/api/map/stops?id=${app_state.route}`, (json) => {
         const stops = Array.from(json.data)
@@ -96,6 +100,7 @@ function create_stop_markers() {
     })    
 }
 
+//adds user icon to map and registers geolocation handler
 function create_user_icon() {
     let element = document.createElement('div')
         element.className = 'bg-emerald-600 rounded-xl p-1 z-[20]'
@@ -120,6 +125,7 @@ function create_user_icon() {
     })
 }
 
+//sets text content of name and timetable button url
 function render_route_info() {
     fetch_json_or_error(`/api/route/info?id=${app_state.route}`, (json) => {
         if(!json.ok) send_to_errorpage("couldnt get route info")
@@ -144,12 +150,14 @@ $(document).ready(() => {
     create_stop_markers()
     create_user_icon()
 
+    //periodically run update_vehicle_positions every 10 seconds
     const update_loop = async () => {
         await update_vehicle_positions()
         setTimeout(update_loop, 10*1000)
     }
 
     update_loop().then(() => {
+        //set map centre to average positon of busses
         let sum = [0, 0]
         app_state.vehicles.forEach((v, k) => {
             sum[0] += parseFloat(v.lon)

@@ -9,6 +9,8 @@ import dotenv
 
 import dbhelpers
 
+from pathlib import Path
+
 GTFS_REALTIME_URL = 'https://data.bus-data.dft.gov.uk/api/v1/gtfsrtdatafeed/'
 
 IMPORT_CHUNK_SIZE = 1000
@@ -18,13 +20,13 @@ dotenv.load_dotenv()
 API_KEY = os.environ.get('BODS_API_KEY')
 
 class MapDB:
-    def __init__(self, path):
+    def __init__(self, path : Path):
         self.path = path
         self.currentFeed = None
 
         self._init_db()
 
-
+    #crates tables if not already existing
     def _init_db(self):
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
@@ -44,8 +46,9 @@ class MapDB:
             );
         """)
 
-    #(id, route, trip, lon, lat, bearing, licencePlate, timestamp)
-    def _handle_vehicle_message(self):
+    #reads from gtfs rt protobuf
+    #returned tuple contains (id, route, trip, lon, lat, bearing, licencePlate, timestamp)
+    def _handle_vehicle_message(self) -> tuple:
         for entity in self.currentFeed.entity:
             if entity.HasField('vehicle'):
                 vehicle = entity.vehicle
@@ -60,9 +63,8 @@ class MapDB:
                     vehicle.timestamp
                 )
 
+    #fetches feed and uplodas data to DB
     def fetch_feed(self):
-        print("fetching RT feed")
-        
         response = requests.get(f'{GTFS_REALTIME_URL}?api_key={API_KEY}&')
 
         if not response.ok:
@@ -84,7 +86,9 @@ class MapDB:
 
         conn.commit()
 
-    def get_vehicle_positions(self, route_id):
+    #returns all vehicles on a route
+    #returned tuple contains (vehicle_id, trip_id, timestamp, lon, lat, bearing)
+    def get_vehicle_positions(self, route_id : str) -> tuple[list[dict], bool]:
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
 

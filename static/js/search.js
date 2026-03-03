@@ -5,6 +5,7 @@ let app_state = {
     bookmarks_visible : false
 }
 
+//render bookmarks to list
 function render_bookmarks() {
     if(app_state.bookmarks.get_map().size != 0) $('#no-bookmarks-text').hide()
 

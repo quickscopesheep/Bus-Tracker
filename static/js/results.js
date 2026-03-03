@@ -69,6 +69,7 @@ const app_state = {
     pages : new Map()
 }
 
+//get markup for result
 function get_result_html(row){
     if(row.type == 'stop')
         return `
@@ -87,6 +88,7 @@ function get_result_html(row){
         `
 }
 
+//fetch results and render html
 async function render_page() {
     if(!app_state.pages.has(app_state.page_no)){
         const offset = (app_state.page_no-1) * app_state.page_size

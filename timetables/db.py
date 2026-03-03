@@ -177,8 +177,19 @@ class TimetableDatabase:
         return total, True
 
     #gets results for a search query
-    def get_search_result(self, search_body : str, page_offset : int, page_size : int) -> list[dict]:
-        #def should escape body for special chars to avoid SQL injection
+    #dict keys:
+    #   type = route/stop
+    #   id = id of entity
+    #   name = name
+    #   origin = (for route) starting location
+    #   dst = (for route) end location
+    #   agency_name = (for route) operating agency
+    #   agency_url = (for route) operating agency url
+    #   stop_code = (for stop) atco/naptan code
+    #   bearing = (for stop) direction stop faces
+    #   locality = (for stop) locality of stop
+
+    def get_search_result(self, search_body : str, page_offset : int, page_size : int) -> tuple[list[dict], bool]:
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
 
@@ -211,15 +222,18 @@ class TimetableDatabase:
         return [dbhelpers.result_to_dict(result, schema) for result in results], True
 
     #gets info about a stop
-    #resulting dictionary contains
-    #name = name
-    #name2 = short name
-    #stop_lat = latitude
-    #stop_lon = longitude
-    #stop_code = ATCO or naptan code
-    #stop_indicator = misclaneous info about stop
-    #stop_bearing = direction the stop faces eg NW, SE
-    
+    #dict keys:
+    #   name = name
+    #   name2 = short name
+    #   stop_lat = latitude
+    #   stop_lon = longitude
+    #   stop_code = ATCO or naptan code
+    #   stop_indicator = misclaneous info about stop
+    #   stop_bearing = direction the stop faces eg NW, SE
+    #   stop_landmark = landmark stop is near
+    #   stop_town = town
+    #   stop_locality = name of locality
+
     def get_stop_data(self, stop_id : str) -> dict:
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
@@ -234,8 +248,14 @@ class TimetableDatabase:
 
         return dbhelpers.result_to_dict(result, schema), True
     
-    # (name, desc, agency_name, agency_url)
-    def get_route_data(self, route_id):
+    #gets info about a route
+    #dict keys:
+    #   name = name
+    #   name2 = short name
+    #   agency_name = operator name
+    #   agency_url = url for agency
+
+    def get_route_data(self, route_id : str) -> dict:
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
 
@@ -253,7 +273,21 @@ class TimetableDatabase:
 
         return dbhelpers.result_to_dict(result, schema), True
 
-    def get_stop_times(self, stop_id):
+    #get stop times
+    #dict keys:
+    #   trip = trip id
+    #   arrival_time = arrival time
+    #   departure_time = departure time
+    #   sequence = sequence
+    #   timing_status = (0/1) timing point or not
+    #   direction = (0/1) outbound/inbound
+    #   entity_id = route id
+    #   entity_name = route name
+    #   service_days = operating days
+    #   service_start = start of service
+    #   service_end = end of service
+
+    def get_stop_times(self, stop_id : str) -> tuple[list[dict], bool]:
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
 
@@ -279,7 +313,21 @@ class TimetableDatabase:
 
         return [dbhelpers.result_to_dict(result, schema) for result in results], True
 
-    def get_route_times(self, route_id):
+    #get route times
+    #dict keys:
+    #   trip = trip id
+    #   arrival_time = arrival time
+    #   departure_time = departure time
+    #   sequence = sequence
+    #   timing_status = (0/1) timing point or not
+    #   direction = (0/1) outbound/inbound
+    #   entity_id = stop id
+    #   entity_name = stop name
+    #   service_days = operating days
+    #   service_start = start of service
+    #   service_end = end of service
+
+    def get_route_times(self, route_id : str) -> tuple[list[dict], bool]:
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
 
@@ -305,7 +353,15 @@ class TimetableDatabase:
 
         return [dbhelpers.result_to_dict(res, schema) for res in results], True
 
-    def get_stops_on_route(self, route_id):
+    #get all stops a route goes to
+    #dict keys:
+    #   id = id of stop
+    #   name = name of stop
+    #   lon = longitude of stop
+    #   lat = latitude of stop
+    #   direction = direction of the stop (inbound/outbound)
+
+    def get_stops_on_route(self, route_id : str) -> tuple[list[dict], bool]:
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
         

@@ -36,6 +36,7 @@ let app_state = {
     bookmarks: null
 }
 
+// take list of times and rearange into lists Trips and Entities
 function organise_timetable_data(data){
     let entities_map = new Map()
 
@@ -63,6 +64,7 @@ function organise_timetable_data(data){
     return {entities, trips}
 }
 
+//take timetable data and render as table
 function render_timetable() {
     const service_day = $('#service-day').val()
     const timing_status = $('#timing-status').val()
@@ -97,6 +99,7 @@ function render_timetable() {
     $('#table-entity-header').text(app_state.type == 'route' ? 'Stop' : 'Route')
 }
 
+//render info in timtable header
 function render_header() {
     $('#timetable-title').html(`
         ${app_state.info.name}
@@ -116,6 +119,7 @@ function render_header() {
     }
 }
 
+//set image of bookmark button to match whether the page is bookmarked
 function update_bookmark_image(){
     if(app_state.bookmarks.is_bookmarked(app_state.id)){
         $('#bookmark-button img').attr('src', 'static/img/bookmark_added_white.svg')
@@ -124,6 +128,7 @@ function update_bookmark_image(){
     }
 }
 
+//toggle whether page is bookmarked
 function toggle_bookmarked(){
     if(app_state.bookmarks.is_bookmarked(app_state.id)){
         app_state.bookmarks.remove_bookmark(app_state.id)
@@ -166,12 +171,14 @@ $(document).ready(() => {
     $('#timing-status').change(() => refresh_timetable())
     $('#direction').change(() => refresh_timetable())
     
+    //fetch timetable info and render
     fetch_json_or_error(`/api/${app_state.type}/info?id=${app_state.id}`, (json) => {
         if(!json.ok) send_to_errorpage('invalid request parameters')
 
         app_state.info = json.data
         render_header()
     })
+    //fetch times and render
     fetch_json_or_error(`/api/${app_state.type}/timetable?id=${app_state.id}`, (json) => {
         if(!json.ok) send_to_errorpage('invalid request parameters')
         

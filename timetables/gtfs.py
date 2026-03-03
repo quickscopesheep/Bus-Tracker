@@ -1,9 +1,10 @@
 from pathlib import Path
 
+from typing import Generator
+
 import zipfile
 import csv
 import io
-
 
 class TripHeadsign:
     def __init__(self, name, direction):
@@ -12,6 +13,7 @@ class TripHeadsign:
         self.frequency = 1
 
 class GTFSFeed:
+    #path = path to GTFS zip file
     def __init__(self, path : Path):
         self.path = path
 
@@ -21,31 +23,31 @@ class GTFSFeed:
 
         self._route_headsigns = None
 
-    def _validate_zip(self, names):
+    #ensure all required files are present in zip
+    def _validate_zip(self, names : list[str]):
         if 'agency.txt' not in names: return False
-        #Technically optional but shall enforce mandatory stops file for simplicity
         if 'stops.txt' not in names: return False
         if 'routes.txt' not in names: return False
         if 'trips.txt' not in names: return False
         if 'stop_times.txt' not in names: return False
 
-        #TODO: callender dates
-
         return True
 
-    def _get_csv_reader(self, file_name):
+    #return dictionary reader to file contained in zip
+    def _get_csv_reader(self, file_name : str) -> csv.DictReader:
         f = self.zf.open(file_name)
         stream = io.TextIOWrapper(f, encoding='utf-8', newline='')
         reader = csv.DictReader(stream)
 
         return reader
 
-    def parse_stops(self):
+    #returns dictionary of all stops used in GTFS feed where key = stop code, value = internal stop id
+    def parse_stops(self) -> dict[str, str]:
         reader = self._get_csv_reader('stops.txt')
         return {row.get('stop_code', '') : row.get('stop_id', '') for row in reader}
 
-    #(id, name, url)
-    def parse_agencies(self):
+    #parses agencies.txt
+    def parse_agencies(self) -> Generator[tuple, None, None]:
         reader = self._get_csv_reader('agency.txt')
 
         for row in reader:
@@ -55,7 +57,8 @@ class GTFSFeed:
                 row.get('agency_url', '')
             )
 
-    def _add_headsign(self, route_id, headsign, direction):
+    #add new TripHeadsign to self._route_headsigns if not already in list. Otherwise increments frequency
+    def _add_headsign(self, route_id : str, headsign : str, direction : str):
         if route_id not in self._route_headsigns:
             self._route_headsigns[route_id] = {}
         
@@ -64,8 +67,9 @@ class GTFSFeed:
         
         self._route_headsigns[route_id][headsign].frequency += 1
 
-    #(id, route, direction, service, headsign)
-    def parse_trips(self):
+    #parses trips.txt
+    #returned tuple contains (trip_id, route_id, direction_id, service_id)
+    def parse_trips(self) -> Generator[tuple, None, None]:
         reader = self._get_csv_reader('trips.txt')
 
         self._route_headsigns = {}
@@ -81,8 +85,9 @@ class GTFSFeed:
             )
             yield trip
 
-
-    def _process_headsigns(self):
+    #takes list of headsigns for each route and produces dictionary of most common inbound and outbound location
+    #where key = route_id, value = (src, dst)
+    def _process_headsigns(self) -> dict[str, tuple]:
         computed_headsigns = {}
 
         for route_id, route_headsigns in self._route_headsigns.items():
@@ -102,8 +107,9 @@ class GTFSFeed:
 
         return computed_headsigns
 
-    #(id, agency, name, longer name, desc)
-    def parse_routes(self):
+    #parses routes.txt
+    #returned tuple contains (route_id, agency_id, route_short_name, route_long_name, route_desc, src location, dst location)
+    def parse_routes(self) -> Generator[tuple, None, None]:
         reader = self._get_csv_reader('routes.txt')
 
         if self._route_headsigns == None:
@@ -124,7 +130,9 @@ class GTFSFeed:
                 headsign[1]
             )
 
-    def parse_service(self):
+    #parses calender.txt
+    #returned tuple contains (service_id, monday, tuesday, wednesday, thursday, friday, saturday, sunday)
+    def parse_service(self) -> Generator[tuple, None, None]:
         reader = self._get_csv_reader('calendar.txt')
 
         for row in reader:
@@ -141,7 +149,9 @@ class GTFSFeed:
                 row.get('end_date', '')
             )
     
-    def parse_service_dates(self):
+    #parses calender_dates.txt
+    #returned tuple contains (service_id, date, exception_type where 1 = service_added, 2 = service_removed)
+    def parse_service_dates(self) -> Generator[tuple, None, None]:
         reader = self._get_csv_reader('calendar_dates.txt')
 
         for row in reader:
@@ -152,9 +162,9 @@ class GTFSFeed:
                 row.get('exception_type', '')
             )
 
-    # handle interpolated times
-    # (trip_id, stop_id, arrival_time, departure_time, index, timing_status)
-    def parse_times(self):
+    # parses stop_times.txt
+    # returned tuple contains (trip_id, stop_id, arrival_time, departure_time, index, timing_status)
+    def parse_times(self) -> Generator[tuple, None, None]:
         reader = self._get_csv_reader('stop_times.txt')
         
         for row in reader:
@@ -166,10 +176,3 @@ class GTFSFeed:
                 int(row.get('stop_sequence', '')),
                 row.get('timepoint', '0')
             )
-    
-if __name__ == '__main__':
-    feed = GTFSFeed('datasets/itm_yorkshire_gtfs.zip')
-    for route in feed.parse_routes():
-        print(route)
-    
-    
