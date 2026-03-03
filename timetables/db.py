@@ -13,13 +13,12 @@ from pathlib import Path
 
 load_dotenv()
 
-IMPORT_CHUNK_SIZE = 1000
-
 class TimetableDatabase:
-    def __init__(self, path):
+    def __init__(self, path : Path):
         self.path = path
         self._init_db()
 
+    #creates tables if they do not already exist
     def _init_db(self):
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
@@ -87,27 +86,14 @@ class TimetableDatabase:
             );
         """)
 
-    def _parse_and_import(self, cur, parse_func, sql):
-        chunk = []
-
-        for stop in parse_func():
-            chunk.append(stop)
-
-            if len(chunk) == IMPORT_CHUNK_SIZE:
-                cur.executemany(sql, chunk)
-                chunk.clear()
-            
-        if len(chunk) > 0:
-            cur.executemany(sql, chunk)
-
-    def import_local(self, gtfs_path, naptan_path):
+    #clears tables and imports the datasets with the paths specified
+    def import_local(self, gtfs_path : Path, naptan_path : Path):
         feed = GTFSFeed(gtfs_path)
 
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
 
-        #clear all tables
-
+        #clear all tables and clear indices
         print('clearing db')
         cur.execute('DROP INDEX IF EXISTS TripsRoute')
         cur.execute('DROP INDEX IF EXISTS TimesTrip')
@@ -121,8 +107,10 @@ class TimetableDatabase:
         cur.execute('DELETE FROM ServiceDates')
         cur.execute('DELETE FROM Times')
 
+        #parse stops from naptan dataset
         naptan = NaptanImporter(naptan_path, feed.parse_stops())
 
+        #parse data and add to database
         print('parsing data')
         dbhelpers.parse_and_import(cur, naptan.parse_stops,
             """INSERT OR IGNORE INTO Stops (id, atco, name, name_short, indicator, bearing, lon, lat, street, landmark, town, nptg_locality, locality_name)
@@ -149,14 +137,17 @@ class TimetableDatabase:
                 sequence, timepoint) VALUES(?, ?, ?, ?, ?, ?)
         """)
         
+        #create indices for quick queries
         print('creating indices')
         cur.execute('CREATE INDEX TripsRoute ON Trips(route)')
         cur.execute('CREATE INDEX TimesTrip ON Times(trip)')
         cur.execute('CREATE INDEX TimesStop ON Times(stop)')
 
+        #ensure all changes are saved to disk
         conn.commit()
 
-    def get_search_num_results(self, search_body):
+    #returns number of search results for a given search query
+    def get_search_num_results(self, search_body : str) -> tuple[int, bool]:
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
 
@@ -185,7 +176,8 @@ class TimetableDatabase:
         
         return total, True
 
-    def get_search_result(self, search_body, page_offset, page_size):
+    #gets results for a search query
+    def get_search_result(self, search_body : str, page_offset : int, page_size : int) -> list[dict]:
         #def should escape body for special chars to avoid SQL injection
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
@@ -218,8 +210,17 @@ class TimetableDatabase:
 
         return [dbhelpers.result_to_dict(result, schema) for result in results], True
 
-    # (code, name, lat, long)
-    def get_stop_data(self, stop_id):
+    #gets info about a stop
+    #resulting dictionary contains
+    #name = name
+    #name2 = short name
+    #stop_lat = latitude
+    #stop_lon = longitude
+    #stop_code = ATCO or naptan code
+    #stop_indicator = misclaneous info about stop
+    #stop_bearing = direction the stop faces eg NW, SE
+    
+    def get_stop_data(self, stop_id : str) -> dict:
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
 
