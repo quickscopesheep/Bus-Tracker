@@ -39,8 +39,6 @@ let app_state = {
     route: null,
     map: null,
     vehicles: new Map(),
-
-    user_marker : null
 }
 
 async function update_vehicle_positions(){
@@ -76,8 +74,6 @@ async function update_vehicle_positions(){
         removeList.forEach(toRemove => {
             app_state.vehicles.delete(toRemove)
         })
-
-        console.log(app_state.vehicles)
     })
 }
 
@@ -85,9 +81,6 @@ function create_stop_markers() {
     fetch_json_or_error(`/api/map/stops?id=${app_state.route}`, (json) => {
         const stops = Array.from(json.data)
         stops.forEach(stop => {
-
-            console.log(stop)
-
             let element = document.createElement('div')
             element.className = 'bg-amber-500 rounded-xl p-1 z-[0] hover:cursor-pointer'
             element.innerHTML = '<img class="size-full" src="static/img/stop.svg">'
@@ -105,13 +98,35 @@ function create_stop_markers() {
 
 function create_user_icon() {
     let element = document.createElement('div')
-        element.className = 'bg-amber-400 rounded-xl p-1'
+        element.className = 'bg-emerald-600 rounded-xl p-1 z-[20]'
         element.innerHTML = '<img src="static/img/location.svg">'
     
-    return new mapboxgl.Marker({
+    let user_marker = new mapboxgl.Marker({
         element: element,
         rotationAlignment: 'map'
     }).setLngLat([0, 0]).addTo(app_state.map)
+
+    let id = navigator.geolocation.watchPosition((pos) => {
+        console.log(pos)
+        user_marker.setLngLat([pos.coords.longitude, pos.coords.latitude])
+    }, (err) => {
+        console.log(err.messages)
+        user_marker.remove()
+        navigator.geolocation.clearWatch(id)
+    }, {
+        enableHighAccuracy: false,
+        timeout: 5000,
+        maximumAge: 0,
+    })
+}
+
+function render_route_info() {
+    fetch_json_or_error(`/api/route/info?id=${app_state.route}`, (json) => {
+        if(!json.ok) send_to_errorpage("couldnt get route info")
+
+        $('#timetable-button').click(() => window.location.href=`/timetable?type=route&id=${app_state.route}`)
+        $('#bus-name').text(json.data.name)
+    })
 }
 
 $(document).ready(() => {
@@ -125,22 +140,9 @@ $(document).ready(() => {
         projection: 'mercator'
     })
 
+    render_route_info()
     create_stop_markers()
-
-    app_state.user_marker = create_user_icon()
-
-    let id = navigator.geolocation.watchPosition((pos) => {
-        console.log(pos)
-        app_state.user_marker.setLngLat([pos.coords.longitude, pos.coords.latitude])
-    }, (err) => {
-        console.log(err.messages)
-        app_state.user_marker.remove()
-        navigator.geolocation.clearWatch(id)
-    }, {
-        enableHighAccuracy: false,
-        timeout: 5000,
-        maximumAge: 0,
-    })
+    create_user_icon()
 
     const update_loop = async () => {
         await update_vehicle_positions()
